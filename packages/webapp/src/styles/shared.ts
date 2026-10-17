@@ -1,4 +1,4 @@
-// Shared component styles, after Loadout's. Colours and fonts come from tokens.css.
+// Shared component styles: a plain utility look. Colours and fonts come from tokens.css.
 
 import { css } from 'lit';
 
@@ -7,6 +7,7 @@ export const base = css`
   :host {
     box-sizing: border-box;
     font-family: var(--font-ui);
+    font-size: 13px;
     color: var(--fg-2);
   }
   *,
@@ -23,32 +24,23 @@ export const base = css`
     cursor: pointer;
   }
   :focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-    border-radius: 6px;
+    outline: 1px solid var(--accent);
+    outline-offset: 1px;
   }
   svg.i {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 14px;
+    height: 14px;
     flex: none;
   }
   .mono {
     font-family: var(--font-mono);
-    font-size: 0.85em;
+    font-size: 12px;
   }
   .muted {
     color: var(--muted);
   }
   .num {
     font-variant-numeric: tabular-nums;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      transition: none !important;
-      animation-duration: 2s !important;
-    }
   }
 `;
 
@@ -57,21 +49,19 @@ export const buttons = css`
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.45rem;
-    padding: 0.5rem 1rem;
-    border-radius: 0.45rem;
-    font-weight: 600;
-    font-size: 0.875rem;
-    border: 1px solid var(--line);
-    background: var(--panel-2);
+    gap: 6px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: var(--radius);
+    border: 1px solid var(--line-strong);
+    background: var(--surface-2);
     color: var(--fg);
-    transition:
-      background 0.15s,
-      border-color 0.15s;
+    font-weight: 600;
+    font-size: 12px;
     white-space: nowrap;
   }
   .btn:hover:not(:disabled) {
-    border-color: var(--muted);
+    background: var(--surface-3);
   }
   .btn.primary {
     background: var(--accent-strong);
@@ -82,9 +72,7 @@ export const buttons = css`
     background: var(--accent);
   }
   .btn.danger {
-    background: var(--bad-soft);
-    border-color: rgba(248, 113, 113, 0.5);
-    color: var(--bad-text);
+    color: var(--bad);
   }
   .btn.ghost {
     background: none;
@@ -93,23 +81,40 @@ export const buttons = css`
   }
   .btn.ghost:hover:not(:disabled) {
     color: var(--fg);
-    border-color: var(--line);
+    background: var(--surface-2);
   }
   .btn.sm {
-    padding: 0.3rem 0.65rem;
-    font-size: 0.8rem;
-  }
-  .btn.lg {
-    padding: 0.7rem 1.4rem;
-    font-size: 0.95rem;
+    height: 24px;
+    padding: 0 8px;
+    font-size: 11.5px;
   }
   .btn:disabled {
-    opacity: 0.45;
+    opacity: 0.4;
     cursor: not-allowed;
   }
   .btn svg {
-    width: 1rem;
-    height: 1rem;
+    width: 13px;
+    height: 13px;
+  }
+  .icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+  }
+  .icon-btn:hover:not(:disabled) {
+    color: var(--fg);
+    background: var(--surface-3);
+  }
+  .icon-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+  .icon-btn svg {
+    width: 13px;
+    height: 13px;
   }
 `;
 
@@ -119,12 +124,13 @@ export const fields = css`
   input[type='number'],
   select {
     font: inherit;
-    font-size: 0.875rem;
+    font-size: 12.5px;
+    height: 28px;
     color: var(--fg);
     background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: 0.45rem;
-    padding: 0.45rem 0.65rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    padding: 0 8px;
     min-width: 0;
   }
   input:focus,
@@ -132,10 +138,11 @@ export const fields = css`
     border-color: var(--accent);
     outline: none;
   }
-  input[type='checkbox'] {
+  input[type='checkbox'],
+  input[type='radio'] {
     accent-color: var(--accent);
-    width: 1rem;
-    height: 1rem;
+    width: 14px;
+    height: 14px;
     margin: 0;
     cursor: pointer;
   }
@@ -144,169 +151,91 @@ export const fields = css`
   }
 `;
 
-export const pills = css`
-  .pill {
+/** Small square badges. */
+export const tags = css`
+  .tag {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    padding: 0.1rem 0.55rem;
-    border-radius: 999px;
-    font-size: 0.72rem;
+    gap: 4px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line-strong);
+    color: var(--fg-2);
+    font-size: 10.5px;
     font-weight: 600;
+    letter-spacing: 0.02em;
     white-space: nowrap;
-    border: 1px solid var(--line);
-    background: var(--panel-2);
-    color: var(--fg-2);
+    text-transform: uppercase;
   }
-  .pill svg {
-    width: 0.8rem;
-    height: 0.8rem;
+  .tag svg {
+    width: 11px;
+    height: 11px;
   }
-  .pill.ok {
-    background: var(--ok-soft);
-    color: var(--ok-text);
-    border-color: rgba(34, 197, 94, 0.4);
-  }
-  .pill.q {
-    background: var(--accent-soft);
-    color: var(--accent-text);
+  .tag.accent {
     border-color: var(--accent-line);
+    color: var(--accent-text);
+    background: var(--accent-soft);
   }
-  .pill.warn {
+  .tag.warn {
+    border-color: rgba(255, 197, 61, 0.45);
+    color: var(--warn);
     background: var(--warn-soft);
-    color: var(--warn-text);
-    border-color: rgba(234, 179, 8, 0.4);
   }
-  .pill.bad {
+  .tag.bad {
+    border-color: rgba(255, 99, 105, 0.45);
+    color: var(--bad);
     background: var(--bad-soft);
-    color: var(--bad-text);
-    border-color: rgba(248, 113, 113, 0.45);
   }
-  .pill.dim {
+  .tag.ok {
+    border-color: rgba(61, 214, 140, 0.4);
+    color: var(--ok);
+    background: var(--ok-soft);
+  }
+  .tag.dim {
+    border-color: var(--line);
     color: var(--faint);
-    background: none;
   }
 `;
 
-export const spinner = css`
-  .spin {
-    width: 1rem;
-    height: 1rem;
-    border-radius: 999px;
-    flex: none;
-    border: 2px solid currentColor;
-    border-right-color: transparent;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-`;
-
-/** Layout shared by every page. */
-export const pageStyles = css`
+/** A section of the page: a header bar with a label, then its body. */
+export const section = css`
   :host {
-    display: flex;
-    flex-direction: column;
-    gap: 1.75rem;
-    padding: 1.75rem 2.25rem 6rem;
-    max-width: 72rem;
-  }
-  .page-title {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-  .page-title h1 {
-    margin: 0;
-    color: var(--fg);
-    font-size: 1.85rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-  }
-  .page-title .sub {
-    color: var(--muted);
-    margin-top: 0.3rem;
-    line-height: 1.5;
-  }
-  .panel {
-    background: var(--panel);
+    display: block;
     border: 1px solid var(--line);
-    border-radius: 0.8rem;
+    background: var(--surface);
   }
-  .section-head {
+  .head {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 0.9rem;
-    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface-2);
   }
-  .section-head h2 {
+  .head h2 {
     margin: 0;
-    color: var(--fg);
-    font-size: 1.15rem;
+    font-size: 11px;
     font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg);
   }
-  .section-head .note {
+  .head .count {
     color: var(--muted);
-    font-size: 0.85rem;
+    font-size: 12px;
   }
-  .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.6rem;
+  .head .grow {
+    flex: 1;
+  }
+  .empty {
+    padding: 28px 16px;
+    color: var(--muted);
     text-align: center;
-    padding: 3rem 1.5rem;
-    color: var(--muted);
-    line-height: 1.5;
+    line-height: 1.6;
   }
-  .empty-state svg {
-    width: 2rem;
-    height: 2rem;
-    color: var(--faint);
-  }
-  .empty-state b {
+  .empty b {
     color: var(--fg);
-    font-size: 1.05rem;
-  }
-  /* The bar that sticks to the bottom of a page, for its main action. */
-  .action-bar {
-    position: fixed;
-    left: 16rem;
-    right: 0;
-    bottom: 0;
-    z-index: 20;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.9rem 2.25rem;
-    background: rgba(11, 17, 28, 0.92);
-    backdrop-filter: blur(8px);
-    border-top: 1px solid var(--line);
-  }
-  .action-bar .summary {
-    margin-right: auto;
-    color: var(--fg-2);
-  }
-  .action-bar .summary b {
-    color: var(--fg);
-  }
-  @media (max-width: 900px) {
-    :host {
-      padding: 1.25rem 1rem 6rem;
-    }
-    .page-title h1 {
-      font-size: 1.5rem;
-    }
-    .action-bar {
-      left: 0;
-      padding: 0.8rem 1rem;
-    }
   }
 `;

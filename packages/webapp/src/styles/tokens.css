@@ -1,39 +1,36 @@
-/* re-name's design tokens: Loadout's single dark theme, with a red accent.
+/* re-name's design tokens: a plain, dark utility look. Square-ish corners, hairline
+   borders, no gradients. Red is kept for actions and selection.
    Custom properties inherit through shadow roots, so every component reads these. */
 :root {
   color-scheme: dark;
-  --bg: #111827;
-  --bg-deep: #0b111c;
-  --panel: #1f2937;
-  --panel-2: #273244;
-  --line: #374151;
-  --line-soft: rgba(75, 85, 99, 0.45);
-  --fg: #f3f4f6;
-  --fg-2: #d1d5db;
-  --muted: #9ca3af;
-  --faint: #6b7280;
+  --bg: #0e0f11;
+  --surface: #15171a;
+  --surface-2: #1b1e22;
+  --surface-3: #23272c;
+  --line: #2a2e34;
+  --line-strong: #3a3f47;
+  --fg: #e6e8eb;
+  --fg-2: #b4b9c1;
+  --muted: #8a919c;
+  --faint: #5f6670;
 
-  --accent: #ef4444;
-  --accent-strong: #dc2626;
-  --accent-2: #f43f5e;
-  --accent-soft: rgba(239, 68, 68, 0.15);
-  --accent-line: rgba(239, 68, 68, 0.5);
-  --accent-text: #fecaca;
-  --glow: rgba(239, 68, 68, 0.26);
-  --glow-2: rgba(244, 63, 94, 0.16);
+  --accent: #e5484d;
+  --accent-strong: #ce2c31;
+  --accent-soft: rgba(229, 72, 77, 0.13);
+  --accent-line: rgba(229, 72, 77, 0.55);
+  --accent-text: #ff9592;
 
-  --ok: #22c55e;
-  --ok-soft: rgba(34, 197, 94, 0.15);
-  --ok-text: #86efac;
-  --warn: #eab308;
-  --warn-soft: rgba(234, 179, 8, 0.15);
-  --warn-text: #fde047;
+  --ok: #3dd68c;
+  --ok-soft: rgba(61, 214, 140, 0.12);
+  --warn: #ffc53d;
+  --warn-soft: rgba(255, 197, 61, 0.12);
   /* Errors share the accent's hue, so they always carry an icon and words too. */
-  --bad: #f87171;
-  --bad-soft: rgba(248, 113, 113, 0.14);
-  --bad-text: #fca5a5;
-  --info-soft: rgba(148, 163, 184, 0.14);
-  --info-text: #cbd5e1;
+  --bad: #ff6369;
+  --bad-soft: rgba(255, 99, 105, 0.12);
+
+  --radius: 3px;
+  --radius-sm: 2px;
+  --row: 30px;
 
   --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;

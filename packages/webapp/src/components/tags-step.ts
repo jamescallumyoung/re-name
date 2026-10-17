@@ -8,7 +8,7 @@ import { customElement, state } from 'lit/decorators.js';
 import type { AnalysedFile } from '@re-name/protocol';
 import { StoreController } from '../app/store-controller.ts';
 import { columnsOf, effectiveValue, groupByFolder, hasCellValue, type TagColumn, tagKey } from '../lib/draft.ts';
-import { base, buttons, fields, pills } from '../styles/shared.ts';
+import { base, buttons, fields, tags } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 import { renderNewName } from './new-name.ts';
 
@@ -28,67 +28,70 @@ export class TagsStep extends LitElement {
     base,
     buttons,
     fields,
-    pills,
+    tags,
     css`
       :host {
-        display: flex;
-        flex-direction: column;
-        gap: 2rem;
+        display: grid;
+        gap: 16px;
       }
-      h2 {
-        margin: 0 0 0.3rem;
-        color: var(--fg);
-        font-size: 1.15rem;
-      }
-      .note {
+      .label {
+        margin-bottom: 6px;
         color: var(--muted);
-        font-size: 0.875rem;
-        margin: 0 0 1rem;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .label span {
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 400;
+        font-size: 12px;
       }
       .list {
-        background: var(--panel);
         border: 1px solid var(--line);
-        border-radius: 0.8rem;
-        overflow: hidden;
       }
-      .tag {
-        border-top: 1px solid var(--line-soft);
+      .tag-row,
+      .file-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 90px 16px 200px 108px;
+        gap: 10px;
+        align-items: center;
+        min-height: 36px;
+        padding: 3px 10px;
+        border-top: 1px solid var(--line);
       }
-      .tag:first-child {
+      .list > .item:first-child > .tag-row {
         border-top: none;
       }
-      .tag-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 1.25rem minmax(9rem, 14rem) 12rem;
-        gap: 0.9rem;
-        align-items: center;
-        padding: 0.7rem 1rem;
-      }
       .source {
-        min-width: 0;
-      }
-      .source .text {
         color: var(--fg);
         font-family: var(--font-mono);
-        font-size: 0.85rem;
+        font-size: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
-      .source .meta {
-        display: flex;
-        gap: 0.4rem;
-        align-items: center;
+      .source.plain {
+        font-family: var(--font-ui);
+        font-weight: 600;
+      }
+      .n {
         color: var(--muted);
-        font-size: 0.78rem;
-        margin-top: 0.15rem;
+        font-size: 11.5px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
       }
       .to {
-        width: 1.1rem;
-        height: 1.1rem;
+        width: 14px;
+        height: 14px;
         color: var(--faint);
       }
       input.value {
         width: 100%;
         font-family: var(--font-mono);
-        font-size: 0.82rem;
+        font-size: 12px;
       }
       input.value.changed {
         border-color: var(--accent-line);
@@ -103,133 +106,109 @@ export class TagsStep extends LitElement {
       }
       .tools {
         display: flex;
-        gap: 0.25rem;
         align-items: center;
         justify-content: flex-end;
-      }
-      .icon-btn {
-        display: grid;
-        place-items: center;
-        width: 2rem;
-        height: 2rem;
-        border-radius: 0.4rem;
-        color: var(--muted);
-      }
-      .icon-btn:hover:not(:disabled) {
-        color: var(--fg);
-        background: var(--panel-2);
-      }
-      .icon-btn:disabled {
-        opacity: 0.3;
-        cursor: default;
-      }
-      .icon-btn svg {
-        width: 1rem;
-        height: 1rem;
+        gap: 2px;
       }
       .per-file {
         display: inline-flex;
         align-items: center;
-        gap: 0.3rem;
+        gap: 3px;
+        height: 24px;
+        padding: 0 6px;
+        border-radius: var(--radius-sm);
         color: var(--muted);
-        font-size: 0.8rem;
+        font-size: 11.5px;
         font-weight: 600;
-        padding: 0.35rem 0.55rem;
-        border-radius: 0.4rem;
       }
       .per-file:hover {
         color: var(--fg);
-        background: var(--panel-2);
+        background: var(--surface-3);
       }
       .per-file svg {
-        width: 0.95rem;
-        height: 0.95rem;
-        transition: transform 0.15s;
+        width: 12px;
+        height: 12px;
       }
       .per-file.open svg {
         transform: rotate(90deg);
       }
-      .per-file .n {
+      .per-file .changed {
         color: var(--accent-text);
       }
-      .files {
-        background: var(--bg);
-        border-top: 1px solid var(--line-soft);
-        padding: 0.4rem 0;
-      }
       .file-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(9rem, 14rem) 2rem;
-        gap: 0.9rem;
-        align-items: center;
-        padding: 0.35rem 1rem 0.35rem 2.2rem;
+        background: var(--bg);
+        padding-left: 26px;
       }
-      .file-row .name {
+      .file-row .fname {
+        grid-column: 1 / 3;
         color: var(--fg-2);
         font-family: var(--font-mono);
-        font-size: 0.75rem;
+        font-size: 11px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-      .names {
-        background: var(--panel);
-        border: 1px solid var(--line);
-        border-radius: 0.8rem;
-        padding: 0.5rem 0;
+      .file-row input {
+        grid-column: 4;
       }
-      .folder {
+      .names .folder {
         display: flex;
         align-items: center;
-        gap: 0.45rem;
+        gap: 6px;
+        height: 30px;
+        padding: 0 10px;
+        background: var(--surface-2);
+        border-top: 1px solid var(--line);
         color: var(--muted);
-        font-size: 0.8rem;
+        font-size: 11.5px;
         font-weight: 600;
-        padding: 0.6rem 1rem 0.3rem;
       }
-      .folder svg {
-        width: 0.95rem;
-        height: 0.95rem;
+      .names .folder:first-child {
+        border-top: none;
+      }
+      .names .folder svg {
+        width: 13px;
+        height: 13px;
       }
       .name-row {
-        padding: 0.45rem 1rem 0.45rem 2.2rem;
+        padding: 6px 10px 6px 26px;
+        border-top: 1px solid var(--line);
       }
-      .name-row .new {
+      .new {
         color: var(--fg);
         font-family: var(--font-mono);
-        font-size: 0.8rem;
+        font-size: 12px;
         overflow-wrap: anywhere;
       }
-      .name-row .old {
+      .old {
         color: var(--faint);
         font-family: var(--font-mono);
-        font-size: 0.7rem;
+        font-size: 10.5px;
         overflow-wrap: anywhere;
       }
-      .name-row .problem {
-        color: var(--bad-text);
-        font-size: 0.82rem;
+      .problem,
+      .warning {
         display: flex;
-        gap: 0.35rem;
+        gap: 5px;
         align-items: center;
+        font-size: 12px;
       }
-      .name-row .problem svg,
-      .name-row .warning svg {
-        width: 0.9rem;
-        height: 0.9rem;
+      .problem {
+        color: var(--bad);
       }
-      .name-row .warning {
-        color: var(--warn-text);
-        font-size: 0.75rem;
-        display: flex;
-        gap: 0.35rem;
-        align-items: center;
+      .warning {
+        color: var(--warn);
+        font-size: 11px;
+      }
+      .problem svg,
+      .warning svg {
+        width: 12px;
+        height: 12px;
       }
       .dup {
-        color: var(--warn-text);
+        color: var(--warn);
         background: var(--warn-soft);
-        border-radius: 0.25rem;
-        padding: 0 0.2rem;
+        padding: 0 2px;
         font-weight: 700;
       }
     `,
@@ -238,23 +217,15 @@ export class TagsStep extends LitElement {
   override render() {
     const draft = this.c.store.draft;
     if (!draft) return nothing;
-    const columns = columnsOf(draft.files);
     return html`
-      <section>
-        <h2>Tags</h2>
-        <p class="note">
-          Each tag found in the file names, and what it becomes. Change a value for every file here, or open
-          <b>Per file</b> to change one. An empty value drops the tag.
-        </p>
-        <div class="list">
-          ${columns.map((col) => this.renderTag(col))} ${this.renderGroups()}
-        </div>
-      </section>
-      <section>
-        <h2>New names</h2>
-        <p class="note">Worked out by the server, in the order and format your media server expects.</p>
+      <div>
+        <div class="label">Tags <span>· one value for every file; an empty value drops the tag</span></div>
+        <div class="list">${columnsOf(draft.files).map((col) => this.renderTag(col))} ${this.renderGroups()}</div>
+      </div>
+      <div>
+        <div class="label">New names <span>· worked out by the server</span></div>
         ${this.renderNames()}
-      </section>
+      </div>
     `;
   }
 
@@ -268,17 +239,15 @@ export class TagsStep extends LitElement {
     const own = files.filter((f) => hasCellValue(draft, f.path, col.key)).length;
     const open = this.open.has(col.key);
     return html`
-      <div class="tag">
+      <div class="item">
         <div class="tag-row">
-          <div class="source">
-            <div class="text">${col.sources.join(' · ')}</div>
-            <div class="meta">
-              ${col.count === draft.files.length ? 'every file' : `${col.count} of ${draft.files.length} files`}
-              ${col.known
-                ? nothing
-                : html`<span class="pill dim" title="Not in the known-tags file: kept as it is">unknown</span>`}
-            </div>
-          </div>
+          <span class="source" title=${col.sources.join(', ')}>${col.sources.join(' · ')}</span>
+          <span class="n">
+            ${col.count === draft.files.length ? 'all files' : `${col.count} of ${draft.files.length}`}
+            ${col.known
+              ? nothing
+              : html`<span class="tag dim" title="Not in the known-tags file: kept as it is">?</span>`}
+          </span>
           ${icon('arrow', 'to')}
           <input
             type="text"
@@ -288,47 +257,40 @@ export class TagsStep extends LitElement {
             .value=${value ?? ''}
             @input=${(e: Event) => store.setColumn(col.key, toValue((e.target as HTMLInputElement).value))}
           />
-          <div class="tools">
+          <span class="tools">
             <button class="icon-btn" title="Drop this tag" ?disabled=${value === null} @click=${() =>
               store.setColumn(col.key, null)}>${icon('x')}</button>
             <button class="icon-btn" title="Back to the known-tags value" ?disabled=${!set} @click=${() =>
               store.setColumn(col.key, undefined)}>${icon('undo')}</button>
             <button class="per-file ${open ? 'open' : ''}" aria-expanded=${open} @click=${() => this.toggle(col.key)}>
-              ${icon('chev')} Per file${own
-                ? html`
-                  <span class="n">· ${own} changed</span>
-                `
-                : nothing}
+              ${icon('chev')} Files${own ? html`<span class="changed">·${own}</span>` : nothing}
             </button>
-          </div>
+          </span>
         </div>
         ${open
-          ? html`<div class="files">
-            ${
-            files.map((f) => {
-              const tag = f.tags.find((t) => tagKey(t) === col.key);
-              if (!tag) return nothing;
-              const v = effectiveValue(draft, f.path, tag);
-              const changed = hasCellValue(draft, f.path, col.key);
-              return html`
-                <div class="file-row">
-                  <span class="name" title=${f.path}>${this.shortName(f)}</span>
-                  <input
-                    type="text"
-                    class="value ${changed ? 'changed' : ''} ${v === null ? 'dropped' : ''}"
-                    aria-label=${`${tag.source} in ${f.path}`}
-                    placeholder="dropped"
-                    .value=${v ?? ''}
-                    @input=${(e: Event) =>
-                      store.setCell(f.path, col.key, toValue((e.target as HTMLInputElement).value))}
-                  />
+          ? files.map((f) => {
+            const tag = f.tags.find((t) => tagKey(t) === col.key);
+            if (!tag) return nothing;
+            const v = effectiveValue(draft, f.path, tag);
+            const changed = hasCellValue(draft, f.path, col.key);
+            return html`
+              <div class="file-row">
+                <span class="fname" title=${f.path}>${this.shortName(f)}</span>
+                <input
+                  type="text"
+                  class="value ${changed ? 'changed' : ''} ${v === null ? 'dropped' : ''}"
+                  aria-label=${`${tag.source} in ${f.path}`}
+                  placeholder="dropped"
+                  .value=${v ?? ''}
+                  @input=${(e: Event) => store.setCell(f.path, col.key, toValue((e.target as HTMLInputElement).value))}
+                />
+                <span class="tools">
                   <button class="icon-btn" title="Back to the value for every file" ?disabled=${!changed}
                     @click=${() => store.setCell(f.path, col.key, undefined)}>${icon('undo')}</button>
-                </div>
-              `;
-            })
-          }
-          </div>`
+                </span>
+              </div>
+            `;
+          })
           : nothing}
       </div>
     `;
@@ -342,12 +304,10 @@ export class TagsStep extends LitElement {
     const common = all.size === 1 ? [...all][0] ?? '' : null;
     const open = this.open.has(GROUPS);
     return html`
-      <div class="tag">
+      <div class="item">
         <div class="tag-row">
-          <div class="source">
-            <div class="text">Release groups</div>
-            <div class="meta">${common === null ? 'they differ between files' : 'the same in every file'}</div>
-          </div>
+          <span class="source plain">Release groups</span>
+          <span class="n">${common === null ? 'differ' : 'all files'}</span>
           ${icon('arrow', 'to')}
           <input
             type="text"
@@ -357,61 +317,55 @@ export class TagsStep extends LitElement {
             .value=${common ?? ''}
             @change=${(e: Event) => store.setAllGroups(splitGroups((e.target as HTMLInputElement).value))}
           />
-          <div class="tools">
+          <span class="tools">
             <button class="per-file ${open ? 'open' : ''}" aria-expanded=${open} @click=${() => this.toggle(GROUPS)}>
-              ${icon('chev')} Per file
+              ${icon('chev')} Files
             </button>
-          </div>
+          </span>
         </div>
         ${open
-          ? html`<div class="files">
-            ${
-            draft.files.map(
-              (f) =>
-                html`
-                  <div class="file-row">
-                    <span class="name" title=${f.path}>${this.shortName(f)}</span>
-                    <input
-                      type="text"
-                      class="value"
-                      aria-label=${`Release groups in ${f.path}`}
-                      placeholder="none"
-                      .value=${(draft.groups[f.path] ?? []).join(', ')}
-                      @change=${(e: Event) =>
-                        store.setGroups(f.path, splitGroups((e.target as HTMLInputElement).value))}
-                    />
-                    <span></span>
-                  </div>
-                `,
-            )
-          }
-          </div>`
+          ? draft.files.map(
+            (f) =>
+              html`
+                <div class="file-row">
+                  <span class="fname" title=${f.path}>${this.shortName(f)}</span>
+                  <input
+                    type="text"
+                    class="value"
+                    aria-label=${`Release groups in ${f.path}`}
+                    placeholder="none"
+                    .value=${(draft.groups[f.path] ?? []).join(', ')}
+                    @change=${(e: Event) => store.setGroups(f.path, splitGroups((e.target as HTMLInputElement).value))}
+                  />
+                  <span></span>
+                </div>
+              `,
+          )
           : nothing}
       </div>
     `;
   }
 
   private renderNames() {
-    const store = this.c.store;
-    const draft = store.draft;
+    const draft = this.c.store.draft;
     if (!draft) return nothing;
-    return html`<div class="names">
+    return html`<div class="list names">
       ${
       groupByFolder(draft.files).map(
         ([folder, files]) =>
-          html`<div class="folder">${icon('folder')} ${folder || `${store.session?.sourceName}/`}</div>
+          html`<div class="folder">${icon('folder')} ${folder || '(top level)'}</div>
           ${
             files.map((f) => {
               const p = draft.preview?.files.find((x) => x.path === f.path);
               return html`<div class="name-row">
               ${
                 !p
-                  ? html`<div class="old">Working out the name…</div>`
+                  ? html`<div class="old">working out the name…</div>`
                   : p.error
                   ? html`<div class="problem">${icon('alert')} ${p.error}</div>`
                   : html`<div class="new">${renderNewName(p.newPath?.split('/').pop() ?? '')}</div>`
               }
-              <div class="old">was ${f.path.slice(f.path.lastIndexOf('/') + 1)}</div>
+              <div class="old">${f.path.slice(f.path.lastIndexOf('/') + 1)}</div>
               ${p?.warnings.map((w) => html`<div class="warning">${icon('alert')} ${w}</div>`)}
             </div>`;
             })
@@ -426,7 +380,7 @@ export class TagsStep extends LitElement {
     const e = this.c.store.draft?.episodes[f.path];
     const name = f.path.slice(f.path.lastIndexOf('/') + 1);
     if (this.c.store.draft?.match?.type !== 'tv' || !e || e.season === null || e.episode === null) return name;
-    return `S${String(e.season).padStart(2, '0')}E${String(e.episode).padStart(2, '0')} · ${name}`;
+    return `S${String(e.season).padStart(2, '0')}E${String(e.episode).padStart(2, '0')}  ${name}`;
   }
 
   private toggle(key: string): void {

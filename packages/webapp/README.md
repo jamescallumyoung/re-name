@@ -18,34 +18,38 @@ check).
 
 ## What to try
 
-1. **Choose the options** in the setup screen: the media server (Plex, Jellyfin, Emby) and episode names. They're asked
-   for once, up front, and listed again in **Settings**.
-2. **Select files** in the explorer: click, shift-click a range, or tick a folder. Samples, multi-episode files and
-   split parts are greyed out with a reason.
-3. **New Job** → pick a TMDB match (or search) → for TV, check the seasons → check the tags. Names under each row come
-   from the (mock) server.
-4. **Add to Queue**. Back on **Files**, the Job's files are dimmed and marked with their Job; the **Queue** page shows
-   each Job's tree of changes. Try queuing _Blade Runner 2049_: a file with the same name is already in `processed/`, so
-   it gets a `DUP-1` tag.
-5. **Edit** or remove a Job on the Queue page, or change the options in Settings, and watch every name change.
-6. **Apply the Queue**, with progress and a result.
+It's one page in one column: **Files**, then the **Draft Job** while there is one, then the **Queue**, with a status bar
+along the bottom.
 
-**POC controls**, at the foot of the sidebar, open controls for the mock server: latency, a failing apply, files changed
-on disk, `--dry-run`, another tab holding the session, Ctrl-C, and a reset. The mock server's state survives a reload
-(as the real server's would); the draft Job doesn't (as designed). In DevTools, `reNamePoc.store` and `reNamePoc.server`
-are available.
+1. **Choose the options** in the modal that opens first: the media server (Plex, Jellyfin, Emby) and episode names. The
+   widget in the header reopens it.
+2. **Select files**: click, shift-click a range, or tick a folder. Samples, multi-episode files and split parts are
+   dimmed with a tag.
+3. **New Job** (in the status bar). Files fold to one line, and the draft opens below them: pick a TMDB match (or
+   search), check the seasons for TV, then the tags. Names come from the (mock) server.
+4. **Add to Queue**. The Job's files are dimmed and tagged with its title, and the Queue lists it; open a Job to see its
+   tree of changes. Try queuing _Blade Runner 2049_: a file with that name is already in `processed/`, so it gets a
+   `DUP-1` tag.
+5. **Edit** or remove a Job, or change the options from the header, and watch the names change.
+6. **Apply Queue**: the confirm dialog lists the settings it will use, then shows progress and a result.
+
+**POC controls**, at the bottom left, drive the mock server: latency, a failing apply, files changed on disk,
+`--dry-run`, another tab holding the session, Ctrl-C, and a reset. The mock server's state survives a reload (as the
+real server's would); the draft Job doesn't (as designed). In DevTools, `reNamePoc.store` and `reNamePoc.server` are
+available.
 
 ## How it's built
 
-The look follows [Loadout](https://loadout.jych.io), with a red accent. The same stack as the real webapp will use: Lit
-3 web components with standard decorators, TypeScript, esbuild (through Deno), `deno test`, `deno lint` and `deno fmt`.
+A plain, dark utility look: square corners, hairline borders, compact rows, a red accent. The same stack as the real
+webapp will use: Lit 3 web components with standard decorators, TypeScript, esbuild (through Deno), `deno test`,
+`deno lint` and `deno fmt`.
 
 - `../protocol/`: the `Rpc` contract and shared types, as the server will use them.
 - `src/api/client.ts`: the real RPC client (`POST /rpc/<command>`, HTTP statuses, the Queue's `ETag` and `If-Match`),
   with the transport injected.
 - `src/app/store.ts`: the single store; components are views over it.
 - `src/lib/`: pure logic (the draft Job, the tag grid's columns, the tree).
-- `src/pages/` and `src/components/`: the views.
+- `src/components/`: the views.
 - `src/mock/`: **POC only.** The mock server, sample data, and stand-ins for the server's name parsing, known tags and
   naming rules. These are simplified versions of what the server will do.
 - `src/poc/`: **POC only.** The controls panel.

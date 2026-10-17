@@ -6,7 +6,7 @@ import { customElement } from 'lit/decorators.js';
 import type { AnalysedFile, Details } from '@re-name/protocol';
 import { StoreController } from '../app/store-controller.ts';
 import { groupByFolder } from '../lib/draft.ts';
-import { base, fields, pills } from '../styles/shared.ts';
+import { base, fields, tags } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -18,100 +18,91 @@ export class SeasonsStep extends LitElement {
   static override styles = [
     base,
     fields,
-    pills,
+    tags,
     css`
       :host {
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
+        display: grid;
+        gap: 12px;
       }
-      .note {
-        color: var(--muted);
-        margin: 0;
-      }
-      section {
-        background: var(--panel);
+      .group {
         border: 1px solid var(--line);
-        border-radius: 0.8rem;
-        overflow: hidden;
       }
-      header {
+      .ghead {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        padding: 0.8rem 1rem;
+        gap: 8px;
+        height: 36px;
+        padding: 0 10px;
+        background: var(--surface-2);
         border-bottom: 1px solid var(--line);
-        flex-wrap: wrap;
       }
-      header .folder {
+      .ghead .folder {
+        flex: 1;
+        min-width: 0;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        margin-right: auto;
+        gap: 6px;
         color: var(--fg);
         font-weight: 600;
-        min-width: 0;
       }
-      header .folder span {
+      .ghead .folder span {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-      header .folder svg {
-        width: 1.05rem;
-        height: 1.05rem;
+      .ghead .folder svg {
+        width: 14px;
+        height: 14px;
         color: var(--muted);
         flex: none;
       }
-      header label {
+      .ghead label {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 6px;
         color: var(--muted);
-        font-size: 0.85rem;
+        font-size: 12px;
       }
       .row {
         display: grid;
-        grid-template-columns: minmax(0, 1.4fr) 10rem 5rem minmax(0, 1.4fr);
-        gap: 1rem;
+        grid-template-columns: 64px minmax(0, 1fr) 120px 64px minmax(0, 1fr);
+        gap: 10px;
         align-items: center;
-        padding: 0.65rem 1rem;
-        border-top: 1px solid var(--line-soft);
+        min-height: 36px;
+        padding: 3px 10px;
+        border-top: 1px solid var(--line);
       }
-      header + .row {
+      .ghead + .row {
         border-top: none;
       }
-      .file {
-        min-width: 0;
-      }
-      .file .code {
+      .code {
         color: var(--fg);
-        font-weight: 700;
-        font-variant-numeric: tabular-nums;
+        font-family: var(--font-mono);
+        font-weight: 600;
       }
-      .file .name {
+      .name {
         color: var(--faint);
         font-family: var(--font-mono);
-        font-size: 0.72rem;
+        font-size: 11px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
       .tmdb {
         color: var(--fg-2);
-        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
-      .tmdb .placeholder {
+      .tmdb i {
         color: var(--faint);
-        font-style: italic;
       }
+      select,
       input[type='number'] {
         width: 100%;
       }
-      @media (max-width: 900px) {
-        .row {
-          grid-template-columns: 1fr 1fr;
-        }
+      .loading {
+        color: var(--muted);
       }
     `,
   ];
@@ -120,11 +111,8 @@ export class SeasonsStep extends LitElement {
     const draft = this.c.store.draft;
     if (!draft) return nothing;
     const details = draft.details;
-    if (!details) return html`<p class="note">Loading seasons from TMDB…</p>`;
-    return html`
-      <p class="note">Check each file’s season and episode against ${details.title} on TMDB.</p>
-      ${groupByFolder(draft.files).map(([folder, files]) => this.renderFolder(folder, files, details))}
-    `;
+    if (!details) return html`<div class="loading">Loading seasons from TMDB…</div>`;
+    return html`${groupByFolder(draft.files).map(([folder, files]) => this.renderFolder(folder, files, details))}`;
   }
 
   private renderFolder(folder: string, files: AnalysedFile[], details: Details) {
@@ -132,9 +120,9 @@ export class SeasonsStep extends LitElement {
     const seasons = new Set(files.map((f) => store.draft?.episodes[f.path]?.season ?? null));
     const common = seasons.size === 1 ? [...seasons][0] : undefined;
     return html`
-      <section>
-        <header>
-          <span class="folder">${icon('folder')}<span>${folder || `${store.session?.sourceName}/`}</span></span>
+      <div class="group">
+        <div class="ghead">
+          <span class="folder">${icon('folder')}<span>${folder || '(top level)'}</span></span>
           <label>
             Season for all
             <select
@@ -147,9 +135,9 @@ export class SeasonsStep extends LitElement {
               ${this.seasonOptions(details, common)}
             </select>
           </label>
-        </header>
+        </div>
         ${files.map((f) => this.renderRow(f, details))}
-      </section>
+      </div>
     `;
   }
 
@@ -177,15 +165,12 @@ export class SeasonsStep extends LitElement {
     const season = details.seasons.find((s) => s.season === choice.season);
     const episode = season?.episodes.find((e) => e.episode === choice.episode);
     const name = file.path.slice(file.path.lastIndexOf('/') + 1);
-    const code = choice.season !== null && choice.episode !== null
-      ? `S${pad(choice.season)}E${pad(choice.episode)}`
-      : 'S??E??';
     return html`
       <div class="row">
-        <div class="file" title=${file.path}>
-          <div class="code">${code}</div>
-          <div class="name">${name}</div>
-        </div>
+        <span class="code">${choice.season !== null && choice.episode !== null
+          ? `S${pad(choice.season)}E${pad(choice.episode)}`
+          : 'S??E??'}</span>
+        <span class="name" title=${file.path}>${name}</span>
         <select
           aria-label=${`Season of ${name}`}
           @change=${(e: Event) => {
@@ -203,17 +188,17 @@ export class SeasonsStep extends LitElement {
             store.setEpisode(file.path, { episode: v === '' ? null : Number(v) });
           }}
         />
-        <div class="tmdb">
+        <span class="tmdb">
           ${choice.season === null
-            ? html`<span class="pill bad">${icon('alert')} Choose a season</span>`
+            ? html`<span class="tag bad">${icon('alert')} Choose a season</span>`
             : !season
-            ? html`<span class="pill warn">No such season on TMDB</span>`
+            ? html`<span class="tag warn">No such season</span>`
             : !episode
-            ? html`<span class="pill warn">Not in season ${choice.season}</span>`
+            ? html`<span class="tag warn">Not in season ${choice.season}</span>`
             : episode.name
             ? episode.name
-            : html`<span class="placeholder" title="TMDB only has a placeholder, so the name is left out">No name on TMDB yet</span>`}
-        </div>
+            : html`<i title="TMDB only has a placeholder, so the name is left out">no name on TMDB yet</i>`}
+        </span>
       </div>
     `;
   }

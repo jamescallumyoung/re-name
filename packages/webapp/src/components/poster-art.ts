@@ -21,7 +21,7 @@ export class PosterArt extends LitElement {
     :host {
       display: block;
       aspect-ratio: 2 / 3;
-      border-radius: 6px;
+      border-radius: 2px;
       overflow: hidden;
       container-type: inline-size;
       box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%);

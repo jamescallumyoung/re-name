@@ -21,42 +21,26 @@ export class PocPanel extends LitElement {
     css`
       :host {
         position: fixed;
-        left: 0.75rem;
-        bottom: 0.9rem;
-        width: 14.5rem;
+        left: 12px;
+        bottom: 60px;
         z-index: 70;
-        font-size: 0.85rem;
       }
       .fab {
-        width: 100%;
         border-style: dashed;
         border-color: var(--warn);
         background: var(--warn-soft);
-        color: var(--warn-text);
+        color: var(--warn);
       }
       .panel {
         position: absolute;
-        bottom: 0;
-        left: calc(100% + 1.25rem);
-        width: 18rem;
-        background: var(--panel);
+        bottom: calc(100% + 6px);
+        left: 0;
+        width: 280px;
+        background: var(--surface);
         border: 1px dashed var(--warn);
-        border-radius: 0.9rem;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-        padding: 1rem;
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+        padding: 12px;
         color: var(--fg-2);
-      }
-      @media (max-width: 900px) {
-        :host {
-          left: auto;
-          right: 0.75rem;
-          width: auto;
-        }
-        .panel {
-          left: auto;
-          right: 0;
-          bottom: calc(100% + 0.5rem);
-        }
       }
       h3 {
         margin: 0 0 4px;

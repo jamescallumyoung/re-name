@@ -20,8 +20,6 @@ import { type Draft, likelySeason, newDraft, type Step, stepsOf, tagKey, toDraft
 import { filesUnder, folderPaths, isSelectable, rangeBetween } from '../lib/tree.ts';
 
 export type Phase = 'connecting' | 'ready' | 'blocked' | 'stopped';
-/** The sidebar's pages, plus the draft Job's page. */
-export type Page = 'files' | 'queue' | 'settings' | 'job';
 
 export interface Toast {
   id: number;
@@ -51,7 +49,10 @@ export class Store extends EventTarget {
   tree: FolderNode | null = null;
   queue: Queue = { jobs: [] };
 
-  page: Page = 'files';
+  /** The settings modal, reopened from the header (view state). */
+  settingsOpen = false;
+  /** The Files section, folded away while a draft is open (view state). */
+  filesFolded = false;
   selection = new Set<string>();
   private anchor: string | null = null;
   expanded = new Set<string>();
@@ -181,17 +182,26 @@ export class Store extends EventTarget {
     }
   }
 
-  // ---------- pages ----------
+  // ---------- view ----------
 
-  goTo(page: Page): void {
-    if (page === 'job' && !this.draft) return;
-    this.page = page;
+  openSettings(): void {
+    this.settingsOpen = true;
+    this.emit();
+  }
+
+  closeSettings(): void {
+    this.settingsOpen = false;
+    this.emit();
+  }
+
+  setFilesFolded(folded: boolean): void {
+    this.filesFolded = folded;
     this.emit();
   }
 
   // ---------- options ----------
 
-  /** The options are asked for once, up front (design doc, section 9.7). */
+  /** The options are asked for once, up front (design doc, section 9.7); this can't be dismissed. */
   get setupOpen(): boolean {
     return this.phase === 'ready' && this.session !== null && !this.session.optionsChosen;
   }
@@ -199,6 +209,7 @@ export class Store extends EventTarget {
   async chooseOptions(options: Options): Promise<void> {
     if ((await this.setOptions(options)) && this.session) {
       this.session = { ...this.session, optionsChosen: true };
+      this.settingsOpen = false;
     }
     this.emit();
   }
@@ -301,7 +312,7 @@ export class Store extends EventTarget {
       );
       const draft = newDraft(files);
       this.draft = draft;
-      this.page = 'job';
+      this.filesFolded = true;
       if (job) {
         // Fill in what the approved Job chose, so only small changes are needed.
         draft.editingJobId = job.id;
@@ -346,7 +357,7 @@ export class Store extends EventTarget {
     switch (pending.kind) {
       case 'discard-draft':
         this.draft = null;
-        if (this.page === 'job') this.page = 'files';
+        this.filesFolded = false;
         if (pending.then === 'new-job') await this.newJob();
         else if (pending.then !== 'close') await this.editJob(pending.then.editJobId);
         break;
@@ -556,7 +567,7 @@ export class Store extends EventTarget {
           : this.api.call('queue.addJob', { draft: job })
       );
       this.draft = null;
-      this.page = 'files';
+      this.filesFolded = false;
       this.toast(editing ? 'The Job was updated.' : 'The Job was added to the Queue.', 'ok');
       await this.loadTree();
     } catch (error) {

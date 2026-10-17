@@ -1,84 +1,51 @@
-// The file explorer (design doc, section 7.1): the source's video files as a list,
-// multi-select with shift-click ranges, folders that select everything inside
-// them, and queued and skipped files dimmed, each with its own pill.
+// The Files section (design doc, section 7.1): the source's video files as compact
+// rows, multi-select with shift-click ranges, folders that select everything inside
+// them, and queued and skipped files dimmed with a tag. It folds to its header while
+// a draft Job is open.
 
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import type { FileNode, FolderNode, SkipReason, TreeNode } from '@re-name/protocol';
 import { StoreController } from '../app/store-controller.ts';
 import { filesUnder, folderCheck, folderPaths, formatBytes, isSelectable } from '../lib/tree.ts';
-import { base, fields, pills } from '../styles/shared.ts';
+import { base, buttons, fields, section, tags } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 
 const SKIP: Record<SkipReason, { label: string; why: string }> = {
   sample: { label: 'Sample', why: 'Samples are left out. If this isn’t one, rename or move it by hand.' },
-  'multi-episode': { label: 'Several episodes', why: 'Files with more than one episode aren’t supported yet.' },
+  'multi-episode': { label: 'Multi-episode', why: 'Files with more than one episode aren’t supported yet.' },
   'split-part': { label: 'Split part', why: 'Movies split into parts (cd1, pt1…) aren’t supported yet.' },
 };
 
-@customElement('file-explorer')
-export class FileExplorer extends LitElement {
+@customElement('files-section')
+export class FilesSection extends LitElement {
   private readonly c = new StoreController(this);
 
   static override styles = [
     base,
+    buttons,
     fields,
-    pills,
+    tags,
+    section,
     css`
-      :host {
-        display: block;
-        background: var(--panel);
-        border: 1px solid var(--line);
-        border-radius: 0.8rem;
-        overflow: hidden;
-      }
-      .toolbar {
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid var(--line);
-        flex-wrap: wrap;
-      }
-      .toolbar .where {
-        margin-right: auto;
-        color: var(--muted);
-        font-size: 0.85rem;
-      }
-      .toolbar .where b {
-        color: var(--fg);
-      }
-      .link {
-        color: var(--muted);
-        font-size: 0.82rem;
-        font-weight: 600;
-        padding: 0.3rem 0.6rem;
-        border-radius: 0.4rem;
-      }
-      .link:hover:not(:disabled) {
-        color: var(--fg);
-        background: var(--panel-2);
-      }
-      .link:disabled {
-        opacity: 0.4;
-        cursor: default;
-      }
       .rows {
-        padding: 0.4rem 0;
         user-select: none;
       }
       .row {
         display: flex;
         align-items: center;
-        gap: 0.7rem;
-        min-height: 2.5rem;
-        padding: 0.3rem 1rem 0.3rem calc(1rem + var(--depth) * 1.5rem);
+        gap: 8px;
+        height: var(--row);
+        padding: 0 12px 0 calc(10px + var(--depth) * 20px);
+        border-bottom: 1px solid var(--line);
+        border-left: 2px solid transparent;
         cursor: pointer;
-        border-left: 3px solid transparent;
-        transition: background 0.1s;
+      }
+      .row:last-child {
+        border-bottom: none;
       }
       .row:hover {
-        background: var(--panel-2);
+        background: var(--surface-2);
       }
       .row.selected {
         background: var(--accent-soft);
@@ -89,30 +56,24 @@ export class FileExplorer extends LitElement {
       }
       .row.off .name,
       .row.off input {
-        opacity: 0.5;
+        opacity: 0.45;
       }
       .chev {
-        width: 1.1rem;
-        height: 1.1rem;
+        width: 14px;
+        height: 14px;
         color: var(--faint);
         flex: none;
-        transition: transform 0.15s;
       }
       .open .chev {
         transform: rotate(90deg);
       }
-      .spacer {
-        width: 1.1rem;
+      .gap {
+        width: 14px;
         flex: none;
       }
-      .folder .name {
-        color: var(--fg);
-        font-weight: 600;
-        font-size: 0.9rem;
-      }
-      .folder-icon {
-        width: 1.05rem;
-        height: 1.05rem;
+      .ficon {
+        width: 14px;
+        height: 14px;
         color: var(--muted);
         flex: none;
       }
@@ -123,49 +84,71 @@ export class FileExplorer extends LitElement {
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      .folder .name {
+        color: var(--fg);
+        font-weight: 600;
+      }
       .file .name {
         font-family: var(--font-mono);
-        font-size: 0.8rem;
+        font-size: 12px;
         color: var(--fg-2);
       }
       .row.selected .name {
         color: var(--fg);
       }
-      .count {
+      .size {
+        width: 64px;
+        text-align: right;
         color: var(--faint);
-        font-size: 0.78rem;
+        font-size: 11.5px;
         font-variant-numeric: tabular-nums;
+        flex: none;
       }
-      .empty {
-        padding: 2.5rem;
-        text-align: center;
+      .folded {
         color: var(--muted);
+        font-size: 12px;
       }
     `,
   ];
 
   override render() {
-    const { tree, selection, expanded, session } = this.c.store;
-    if (!tree) return html`<div class="empty">Reading ${session?.sourceName ?? 'the source'}…</div>`;
-    const files = filesUnder(tree);
+    const store = this.c.store;
+    const { tree, selection, expanded, filesFolded, draft } = store;
+    const files = tree ? filesUnder(tree) : [];
     const available = files.filter(isSelectable).length;
-    const allOpen = folderPaths(tree).slice(1).every((p) => expanded.has(p));
+    const allOpen = tree ? folderPaths(tree).slice(1).every((p) => expanded.has(p)) : false;
+    const folded = filesFolded && draft !== null;
     return html`
-      <div class="toolbar">
-        <span class="where">Video files only · shift-click to select a range</span>
-        <button class="link" @click=${() => this.c.store.selectAll()} ?disabled=${available === 0}>Select all</button>
-        <button class="link" @click=${() => this.c.store.clearSelection()} ?disabled=${selection.size === 0}>
-          Clear selection
-        </button>
-        <button class="link" @click=${() => this.c.store.setAllExpanded(!allOpen)}>
-          ${allOpen ? 'Collapse all' : 'Expand all'}
-        </button>
+      <div class="head">
+        <h2>Files</h2>
+        <span class="count">${available} of ${files.length} video files available</span>
+        <span class="grow"></span>
+        ${folded
+          ? html`
+            <span class="folded">Folded while you edit the draft Job</span>
+            <button class="btn sm" @click=${() => store.setFilesFolded(false)}>Show files</button>
+          `
+          : html`
+            <button class="btn sm ghost" @click=${() =>
+              store.selectAll()} ?disabled=${available === 0}>Select all</button>
+            <button class="btn sm ghost" @click=${() => store.clearSelection()} ?disabled=${selection.size === 0}>
+              Clear
+            </button>
+            <button class="btn sm ghost" @click=${() => store.setAllExpanded(!allOpen)}>
+              ${allOpen ? 'Collapse all' : 'Expand all'}
+            </button>
+            ${draft ? html`<button class="btn sm" @click=${() => store.setFilesFolded(true)}>Fold</button>` : nothing}
+          `}
       </div>
-      <div class="rows" role="tree" aria-multiselectable="true">
-        ${files.length === 0
-          ? html`<div class="empty">No video files are left in ${session?.sourceName}/.</div>`
-          : tree.children.map((n) => this.renderNode(n, 0))}
-      </div>
+      ${folded
+        ? nothing
+        : !tree
+        ? html`<div class="empty">Reading the source…</div>`
+        : files.length === 0
+        ? html`<div class="empty">No video files are left in the source.</div>`
+        : html`<div class="rows" role="tree" aria-multiselectable="true">
+          ${tree.children.map((n) => this.renderNode(n, 0))}
+        </div>`}
     `;
   }
 
@@ -199,9 +182,9 @@ export class FileExplorer extends LitElement {
             this.c.store.toggleFolder(folder);
           }}
         />
-        ${icon('folder', 'folder-icon')}
+        ${icon('folder', 'ficon')}
         <span class="name" title=${folder.path}>${folder.name}</span>
-        <span class="count">${all.length}</span>
+        <span class="size">${all.length} file${all.length === 1 ? '' : 's'}</span>
       </div>
       ${open ? folder.children.map((n) => this.renderNode(n, depth + 1)) : nothing}
     `;
@@ -213,11 +196,6 @@ export class FileExplorer extends LitElement {
     const selected = selection.has(file.path);
     const status = file.status;
     const job = status.state === 'queued' ? queue.jobs.find((j) => j.id === status.jobId) : undefined;
-    const title = status.state === 'skipped'
-      ? SKIP[status.reason].why
-      : status.state === 'queued'
-      ? `In the Job for ${job?.match.title ?? '…'}`
-      : `${file.path} · ${formatBytes(file.size)}`;
     return html`
       <div
         class="row file ${selected ? 'selected' : ''} ${selectable ? '' : 'off'}"
@@ -225,10 +203,10 @@ export class FileExplorer extends LitElement {
         role="treeitem"
         aria-selected=${selected}
         aria-disabled=${!selectable}
-        title=${title}
+        title=${status.state === 'skipped' ? SKIP[status.reason].why : file.path}
         @click=${(e: MouseEvent) => selectable && this.c.store.toggleFile(file.path, e.shiftKey)}
       >
-        <span class="spacer"></span>
+        <span class="gap"></span>
         <input
           type="checkbox"
           aria-label=${`Select ${file.name}`}
@@ -241,10 +219,11 @@ export class FileExplorer extends LitElement {
         />
         <span class="name">${file.name}</span>
         ${status.state === 'queued'
-          ? html`<span class="pill">${icon('queue')} ${job?.match.title ?? 'Queued'}</span>`
+          ? html`<span class="tag" title="In an approved Job">${icon('queue')} ${job?.match.title ?? 'Queued'}</span>`
           : status.state === 'skipped'
-          ? html`<span class="pill dim">${icon('skip')} ${SKIP[status.reason].label}</span>`
+          ? html`<span class="tag dim">${icon('skip')} ${SKIP[status.reason].label}</span>`
           : nothing}
+        <span class="size">${formatBytes(file.size)}</span>
       </div>
     `;
   }

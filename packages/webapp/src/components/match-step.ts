@@ -1,11 +1,11 @@
-// Step 1, Match (design doc, section 7.2): five suggestions from the server, and a
-// manual search for when they're all wrong.
+// Step 1, Match (design doc, section 7.2): five suggestions from the server as a
+// list to pick from, and a manual search for when they're all wrong.
 
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import type { Match } from '@re-name/protocol';
 import { StoreController } from '../app/store-controller.ts';
-import { base, buttons, fields, pills } from '../styles/shared.ts';
+import { base, buttons, fields, tags } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 import './poster-art.ts';
 
@@ -17,87 +17,79 @@ export class MatchStep extends LitElement {
     base,
     buttons,
     fields,
-    pills,
+    tags,
     css`
       :host {
-        display: flex;
-        flex-direction: column;
-        gap: 2rem;
-      }
-      h2 {
-        margin: 0 0 0.3rem;
-        color: var(--fg);
-        font-size: 1.15rem;
-      }
-      .note {
-        color: var(--muted);
-        font-size: 0.875rem;
-        margin: 0 0 1rem;
-      }
-      .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
-        gap: 1rem;
+        gap: 16px;
       }
-      .card {
-        display: flex;
-        flex-direction: column;
-        gap: 0.55rem;
-        padding: 0.5rem;
-        border-radius: 0.8rem;
-        border: 2px solid transparent;
+      .label {
+        margin-bottom: 6px;
+        color: var(--muted);
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .label b {
+        color: var(--fg-2);
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 600;
+        font-size: 12px;
+      }
+      .list {
+        border: 1px solid var(--line);
+      }
+      .match {
+        display: grid;
+        grid-template-columns: 14px 28px minmax(0, 1fr) 60px 90px;
+        gap: 12px;
+        align-items: center;
+        width: 100%;
+        min-height: 52px;
+        padding: 5px 10px;
+        border-top: 1px solid var(--line);
         text-align: left;
-        transition:
-          background 0.15s,
-          border-color 0.15s;
+        cursor: pointer;
       }
-      .card:hover {
-        background: var(--panel);
+      .match:first-child {
+        border-top: none;
       }
-      .card[aria-pressed='true'] {
-        border-color: var(--accent);
+      .match:hover {
+        background: var(--surface-2);
+      }
+      .match.on {
         background: var(--accent-soft);
       }
-      .card .name {
+      .match poster-art {
+        width: 28px;
+      }
+      .match .t {
         color: var(--fg);
-        font-weight: 700;
-        line-height: 1.25;
+        font-weight: 600;
       }
-      .card .meta {
-        display: flex;
-        gap: 0.4rem;
-        align-items: center;
+      .match .y {
         color: var(--muted);
-        font-size: 0.8rem;
+        margin-left: 4px;
       }
-      .card .id {
+      .match .id {
         color: var(--faint);
         font-family: var(--font-mono);
-        font-size: 0.72rem;
+        font-size: 11px;
+        text-align: right;
       }
-      .skeleton {
-        aspect-ratio: 2 / 3;
-        border-radius: 6px;
-        background: linear-gradient(90deg, var(--panel), var(--panel-2), var(--panel));
-        background-size: 200% 100%;
-        animation: shimmer 1.2s infinite linear;
-      }
-      @keyframes shimmer {
-        to {
-          background-position: -200% 0;
-        }
+      .loading {
+        padding: 14px 10px;
+        color: var(--muted);
       }
       form {
         display: flex;
-        gap: 0.6rem;
-        max-width: 42rem;
-        margin-bottom: 1.25rem;
+        gap: 6px;
+        margin-bottom: 8px;
       }
       form input {
         flex: 1;
-      }
-      .none {
-        color: var(--muted);
       }
     `,
   ];
@@ -107,26 +99,20 @@ export class MatchStep extends LitElement {
     if (!draft) return nothing;
     const parsed = draft.files[0];
     return html`
-      <section>
-        <h2>Which title is this?</h2>
-        <p class="note">
-          Suggestions for <b>${parsed?.parsedTitle || '—'}</b>${parsed?.parsedYear ? ` (${parsed.parsedYear})` : ''}, as
-          read from the file names.
-        </p>
-        <div class="grid">
-          ${draft.suggestions === null
-            ? Array.from({ length: 5 }, () =>
-              html`
-                <div>
-                  <div class="skeleton"></div>
-                </div>
-              `)
-            : draft.suggestions.map((m) => this.renderCard(m))}
+      <div>
+        <div class="label">
+          Suggestions · read from the names as <b>${parsed?.parsedTitle || '—'}${parsed?.parsedYear
+            ? ` (${parsed.parsedYear})`
+            : ''}</b>
         </div>
-      </section>
-      <section>
-        <h2>Not there? Search TMDB</h2>
-        <p class="note">Search by title, and narrow it to movies or TV if you need to.</p>
+        <div class="list" role="radiogroup" aria-label="Suggested titles">
+          ${draft.suggestions === null
+            ? html`<div class="loading">Asking TMDB…</div>`
+            : draft.suggestions.map((m) => this.renderMatch(m))}
+        </div>
+      </div>
+      <div>
+        <div class="label">Search TMDB</div>
         <form
           @submit=${(e: Event) => {
             e.preventDefault();
@@ -152,30 +138,34 @@ export class MatchStep extends LitElement {
             <option value="movie" .selected=${draft.searchType === 'movie'}>Movies</option>
             <option value="tv" .selected=${draft.searchType === 'tv'}>TV</option>
           </select>
-          <button class="btn" type="submit" ?disabled=${draft.searching}>${icon('search')} ${draft.searching
-            ? 'Searching…'
-            : 'Search'}</button>
+          <button class="btn" type="submit" ?disabled=${draft.searching}>${icon('search')} Search</button>
         </form>
-        ${draft.searchResults === null
-          ? nothing
-          : draft.searchResults.length === 0
-          ? html`<p class="none">No titles found.</p>`
-          : html`<div class="grid">${draft.searchResults.map((m) => this.renderCard(m))}</div>`}
-      </section>
+        ${draft.searchResults === null ? nothing : draft.searchResults.length === 0
+          ? html`
+            <div class="list">
+              <div class="loading">No titles found.</div>
+            </div>
+          `
+          : html`<div class="list" role="radiogroup" aria-label="Search results">
+            ${draft.searchResults.map((m) => this.renderMatch(m))}
+          </div>`}
+      </div>
     `;
   }
 
-  private renderCard(m: Match) {
+  private renderMatch(m: Match) {
     const selected = this.c.store.draft?.match;
-    const pressed = selected?.tmdbId === m.tmdbId && selected.type === m.type;
+    const on = selected?.tmdbId === m.tmdbId && selected.type === m.type;
     return html`
-      <button class="card" aria-pressed=${pressed} @click=${() => this.c.store.chooseMatch(m)}>
+      <button class="match ${on ? 'on' : ''}" role="radio" aria-checked=${on} @click=${() =>
+        this.c.store.chooseMatch(m)}>
+        <input type="radio" tabindex="-1" .checked=${on} />
         <poster-art label=${m.title} year=${m.year} type=${m.type} tmdb-id=${m.tmdbId}
           poster-url=${m.posterUrl ??
             ''}></poster-art>
-        <span class="name">${m.title}</span>
-        <span class="meta">${m.year} <span class="pill">${m.type === 'tv' ? 'TV' : 'Movie'}</span></span>
-        <span class="id">TMDB ${m.tmdbId}</span>
+        <span><span class="t">${m.title}</span><span class="y">(${m.year})</span></span>
+        <span class="tag">${m.type === 'tv' ? 'TV' : 'Movie'}</span>
+        <span class="id">tmdb ${m.tmdbId}</span>
       </button>
     `;
   }
