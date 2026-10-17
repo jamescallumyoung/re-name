@@ -4,7 +4,7 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { MockControls, MockServer } from '../mock/server.ts';
-import { shared } from '../styles/shared.ts';
+import { base, buttons } from '../styles/shared.ts';
 
 @customElement('poc-panel')
 export class PocPanel extends LitElement {
@@ -16,34 +16,47 @@ export class PocPanel extends LitElement {
   accessor controls: MockControls | null = null;
 
   static override styles = [
-    shared,
+    base,
+    buttons,
     css`
       :host {
         position: fixed;
-        top: 9px;
-        left: 50%;
-        transform: translateX(-50%);
+        left: 0.75rem;
+        bottom: 0.9rem;
+        width: 14.5rem;
         z-index: 70;
-        display: flex;
-        flex-direction: column-reverse;
-        align-items: center;
-        font-size: 13px;
+        font-size: 0.85rem;
       }
       .fab {
-        background: var(--warn);
+        width: 100%;
+        border-style: dashed;
         border-color: var(--warn);
-        color: #fff;
-        font-weight: 700;
-        box-shadow: var(--shadow);
+        background: var(--warn-soft);
+        color: var(--warn-text);
       }
       .panel {
-        width: 300px;
-        background: var(--surface);
-        border: 2px dashed var(--warn);
-        border-radius: 12px;
-        box-shadow: var(--shadow-lg);
-        padding: 14px;
-        margin-top: 8px;
+        position: absolute;
+        bottom: 0;
+        left: calc(100% + 1.25rem);
+        width: 18rem;
+        background: var(--panel);
+        border: 1px dashed var(--warn);
+        border-radius: 0.9rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        padding: 1rem;
+        color: var(--fg-2);
+      }
+      @media (max-width: 900px) {
+        :host {
+          left: auto;
+          right: 0.75rem;
+          width: auto;
+        }
+        .panel {
+          left: auto;
+          right: 0;
+          bottom: calc(100% + 0.5rem);
+        }
       }
       h3 {
         margin: 0 0 4px;
@@ -51,7 +64,7 @@ export class PocPanel extends LitElement {
       }
       p {
         margin: 0 0 12px;
-        color: var(--fg-3);
+        color: var(--muted);
         font-size: 12px;
       }
       h4 {
@@ -59,7 +72,7 @@ export class PocPanel extends LitElement {
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: var(--fg-3);
+        color: var(--muted);
       }
       label {
         display: flex;
@@ -87,7 +100,7 @@ export class PocPanel extends LitElement {
             <div class="row">
                       ${(['fast', 'normal', 'slow'] as const).map(
                         (l) =>
-                          html`<button class="small ${c.latency === l ? 'primary' : ''}" @click=${() =>
+                          html`<button class="btn sm ${c.latency === l ? 'primary' : ''}" @click=${() =>
                             this.set({ latency: l })}>${l}</button>`,
                       )}
                     </div>
@@ -108,17 +121,19 @@ export class PocPanel extends LitElement {
               )} /> Another tab holds the session</label>
             <h4>Server events</h4>
             <div class="row">
-              <button class="small" @click=${() => this.server?.push({ type: 'shutting-down' })}>Ctrl-C</button>
-              <button class="small" @click=${() => this.server?.push({ type: 'taken-over' })}>Taken over</button>
+              <button class="btn sm" @click=${() => this.server?.push({ type: 'shutting-down' })}>Ctrl-C</button>
+              <button class="btn sm" @click=${() => this.server?.push({ type: 'taken-over' })}>Taken over</button>
             </div>
             <h4>Mock server</h4>
             <div class="row">
-              <button class="small danger" @click=${() => this.reset()}>Reset everything</button>
+              <button class="btn sm danger" @click=${() => this.reset()}>Reset everything</button>
             </div>
           </div>
         `
         : ''}
-      <button class="fab" @click=${() => this.toggle()}>${this.open ? 'Close' : 'POC'}</button>
+      <button class="btn sm fab" @click=${() => this.toggle()}>${this.open
+        ? 'Close POC controls'
+        : 'POC controls'}</button>
     `;
   }
 

@@ -20,7 +20,8 @@ import { type Draft, likelySeason, newDraft, type Step, stepsOf, tagKey, toDraft
 import { filesUnder, folderPaths, isSelectable, rangeBetween } from '../lib/tree.ts';
 
 export type Phase = 'connecting' | 'ready' | 'blocked' | 'stopped';
-export type Screen = 'overview' | 'job';
+/** The sidebar's pages, plus the draft Job's page. */
+export type Page = 'files' | 'queue' | 'settings' | 'job';
 
 export interface Toast {
   id: number;
@@ -50,7 +51,7 @@ export class Store extends EventTarget {
   tree: FolderNode | null = null;
   queue: Queue = { jobs: [] };
 
-  screen: Screen = 'overview';
+  page: Page = 'files';
   selection = new Set<string>();
   private anchor: string | null = null;
   expanded = new Set<string>();
@@ -180,19 +181,43 @@ export class Store extends EventTarget {
     }
   }
 
+  // ---------- pages ----------
+
+  goTo(page: Page): void {
+    if (page === 'job' && !this.draft) return;
+    this.page = page;
+    this.emit();
+  }
+
   // ---------- options ----------
 
-  async setOptions(change: Partial<Options>): Promise<void> {
+  /** The options are asked for once, up front (design doc, section 9.7). */
+  get setupOpen(): boolean {
+    return this.phase === 'ready' && this.session !== null && !this.session.optionsChosen;
+  }
+
+  async chooseOptions(options: Options): Promise<void> {
+    if ((await this.setOptions(options)) && this.session) {
+      this.session = { ...this.session, optionsChosen: true };
+    }
+    this.emit();
+  }
+
+  /** Changing an option renames every queued file, so it changes the Queue. */
+  async setOptions(change: Partial<Options>): Promise<boolean> {
     const next = { ...this.options, ...change };
     try {
       const result = await this.queueCommand(() => this.api.call('options.set', next));
       this.options = result.options;
       this.queue = result.queue;
       if (this.draft) this.schedulePreview();
+      return true;
     } catch (error) {
       this.report(error);
+      return false;
+    } finally {
+      this.emit();
     }
-    this.emit();
   }
 
   // ---------- the explorer ----------
@@ -276,7 +301,7 @@ export class Store extends EventTarget {
       );
       const draft = newDraft(files);
       this.draft = draft;
-      this.screen = 'job';
+      this.page = 'job';
       if (job) {
         // Fill in what the approved Job chose, so only small changes are needed.
         draft.editingJobId = job.id;
@@ -305,17 +330,6 @@ export class Store extends EventTarget {
     }
   }
 
-  /** Leaves the draft without discarding it. */
-  showOverview(): void {
-    this.screen = 'overview';
-    this.emit();
-  }
-
-  showDraft(): void {
-    if (this.draft) this.screen = 'job';
-    this.emit();
-  }
-
   /** Discarding asks first (design doc, section 7.2). */
   closeDraft(): void {
     this.pending = { kind: 'discard-draft', then: 'close' };
@@ -332,7 +346,7 @@ export class Store extends EventTarget {
     switch (pending.kind) {
       case 'discard-draft':
         this.draft = null;
-        this.screen = 'overview';
+        if (this.page === 'job') this.page = 'files';
         if (pending.then === 'new-job') await this.newJob();
         else if (pending.then !== 'close') await this.editJob(pending.then.editJobId);
         break;
@@ -542,7 +556,7 @@ export class Store extends EventTarget {
           : this.api.call('queue.addJob', { draft: job })
       );
       this.draft = null;
-      this.screen = 'overview';
+      this.page = 'files';
       this.toast(editing ? 'The Job was updated.' : 'The Job was added to the Queue.', 'ok');
       await this.loadTree();
     } catch (error) {

@@ -4,6 +4,7 @@
 import type { Details, Episode, MediaType, Season } from '@re-name/protocol';
 
 export const SOURCE_NAME = 'Downloads';
+export const SOURCE_PATH = '/Volumes/Media/Downloads';
 export const TARGET_NAME = 'processed';
 
 const ep = (...names: (string | null)[]): Episode[] => names.map((name, i) => ({ episode: i + 1, name }));

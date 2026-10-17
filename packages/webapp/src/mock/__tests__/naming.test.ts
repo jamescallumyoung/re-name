@@ -40,15 +40,24 @@ describe('nameQueue (mock)', () => {
       draft: draftOf('tv', 95396, 'Severance.S01E08.Whats.for.Dinner.1080p.WEB-DL.H.264-NTb.mkv'),
     }];
     expect(newPaths(jobs, opts('plex'))).toEqual([
-      "Severance (2022) {tmdb-95396}/Season 01/Severance (2022) - S01E08 - What's for Dinner_ - [1080p WEB-DL H.264 -NTb].mkv",
+      "Severance (2022) {tmdb-95396}/Season 01/Severance (2022) - S01E08 - What's for Dinner_ [1080p WEB-DL H.264 -NTb].mkv",
     ]);
+  });
+
+  it('puts a space before an episode’s brackets for Plex, and " - " for Jellyfin and Emby', () => {
+    const jobs = [{ id: 'a', draft: draftOf('tv', 97546, 'Ted.Lasso.S01E02.1080p.WEB-DL-NTb.mkv') }];
+    expect(newPaths(jobs, opts('plex'))[0]).toContain('Ted Lasso (2020) - S01E02 - Biscuits [1080p WEB-DL -NTb].mkv');
+    expect(newPaths(jobs, opts('jellyfin'))[0]).toContain(
+      'Ted Lasso (2020) - S01E02 - Biscuits - [1080p WEB-DL -NTb].mkv',
+    );
+    expect(newPaths(jobs, opts('emby'))[0]).toContain('Ted Lasso (2020) - S01E02 - Biscuits - [1080p WEB-DL -NTb].mkv');
   });
 
   it('leaves out placeholder episode names, and the episode name when the option is off', () => {
     const slow = [{ id: 'a', draft: draftOf('tv', 95480, 'Slow.Horses.S05E01.1080p.WEB-DL-NTb.mkv') }];
-    expect(newPaths(slow, opts('plex'))[0]).toContain('Slow Horses (2022) - S05E01 - [1080p WEB-DL -NTb].mkv');
+    expect(newPaths(slow, opts('plex'))[0]).toContain('Slow Horses (2022) - S05E01 [1080p WEB-DL -NTb].mkv');
     const sev = [{ id: 'a', draft: draftOf('tv', 95396, 'Severance.S01E01.1080p.WEB-DL-NTb.mkv') }];
-    expect(newPaths(sev, opts('plex', false))[0]).toContain('Severance (2022) - S01E01 - [1080p WEB-DL -NTb].mkv');
+    expect(newPaths(sev, opts('plex', false))[0]).toContain('Severance (2022) - S01E01 [1080p WEB-DL -NTb].mkv');
   });
 
   it('adds DUP-n to the newer file, before the groups', () => {

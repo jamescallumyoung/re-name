@@ -2,7 +2,7 @@
 // server; the real app passes `browserTransport` instead.
 
 import { ApiClient } from './api/client.ts';
-import { Store } from './app/store.ts';
+import { type Page, Store } from './app/store.ts';
 import { provideStore } from './app/store-controller.ts';
 import { MockServer } from './mock/server.ts';
 import './app/re-name-app.ts';
@@ -19,15 +19,22 @@ const panel = document.createElement('poc-panel') as PocPanel;
 panel.server = server;
 document.body.append(panel);
 
-// The screen lives in the URL, so Back returns to the overview and keeps the draft.
+// The page lives in the URL, so Back and Forward move between pages (the draft is kept).
+const PAGES: readonly Page[] = ['files', 'queue', 'settings', 'job'];
 store.addEventListener('change', () => {
-  const hash = store.screen === 'job' && store.draft ? `#/job/${store.draft.step}` : '#/';
-  if (location.hash !== hash) {
-    const toJob = hash.startsWith('#/job') && !location.hash.startsWith('#/job');
-    toJob ? history.pushState(null, '', hash) : history.replaceState(null, '', hash);
-  }
+  const hash = `#/${store.page}`;
+  if (location.hash !== hash) history.pushState(null, '', hash);
 });
-addEventListener('popstate', () => (location.hash.startsWith('#/job') ? store.showDraft() : store.showOverview()));
+const fromHash = () => {
+  const page = location.hash.slice(2) as Page;
+  if (PAGES.includes(page)) store.goTo(page);
+};
+addEventListener('popstate', fromHash);
+store.addEventListener('change', function first() {
+  if (store.phase !== 'ready') return;
+  store.removeEventListener('change', first);
+  fromHash();
+});
 
 // A reload loses the draft Job, so warn first (design doc, section 7.2).
 addEventListener('beforeunload', (e) => {

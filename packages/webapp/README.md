@@ -18,32 +18,34 @@ check).
 
 ## What to try
 
-1. **Select files** in the explorer: click, shift-click a range, or tick a folder. Samples, multi-episode files and
+1. **Choose the options** in the setup screen: the media server (Plex, Jellyfin, Emby) and episode names. They're asked
+   for once, up front, and listed again in **Settings**.
+2. **Select files** in the explorer: click, shift-click a range, or tick a folder. Samples, multi-episode files and
    split parts are greyed out with a reason.
-2. **New Job from selection** → pick a TMDB match (or search) → for TV, check the seasons → check the tags. Names under
-   each row come from the (mock) server.
-3. **Add Job to Queue**. Back on the overview, the Job's files are greyed out and the Queue shows the tree of changes.
-   Try queuing _Blade Runner 2049_: a file with the same name is already in `processed/`, so it gets a `DUP-1` tag.
-4. **Edit** or **Remove** a Job, switch the flavour (Plex, Jellyfin, Emby) or episode names in the header, and watch
-   every preview change.
-5. **Confirm** applies the whole Queue, with progress and a result.
+3. **New Job** → pick a TMDB match (or search) → for TV, check the seasons → check the tags. Names under each row come
+   from the (mock) server.
+4. **Add to Queue**. Back on **Files**, the Job's files are dimmed and marked with their Job; the **Queue** page shows
+   each Job's tree of changes. Try queuing _Blade Runner 2049_: a file with the same name is already in `processed/`, so
+   it gets a `DUP-1` tag.
+5. **Edit** or remove a Job on the Queue page, or change the options in Settings, and watch every name change.
+6. **Apply the Queue**, with progress and a result.
 
-The **POC** button at the top opens controls for the mock server: latency, a failing apply, files changed on disk,
-`--dry-run`, another tab holding the session, Ctrl-C, and a reset. The mock server's state survives a reload (as the
-real server's would); the draft Job doesn't (as designed). In DevTools, `reNamePoc.store` and `reNamePoc.server` are
-available.
+**POC controls**, at the foot of the sidebar, open controls for the mock server: latency, a failing apply, files changed
+on disk, `--dry-run`, another tab holding the session, Ctrl-C, and a reset. The mock server's state survives a reload
+(as the real server's would); the draft Job doesn't (as designed). In DevTools, `reNamePoc.store` and `reNamePoc.server`
+are available.
 
 ## How it's built
 
-The same stack as the real webapp will use: Lit 3 web components with standard decorators, TypeScript, esbuild (through
-Deno), `deno test`, `deno lint` and `deno fmt`.
+The look follows [Loadout](https://loadout.jych.io), with a red accent. The same stack as the real webapp will use: Lit
+3 web components with standard decorators, TypeScript, esbuild (through Deno), `deno test`, `deno lint` and `deno fmt`.
 
 - `../protocol/`: the `Rpc` contract and shared types, as the server will use them.
 - `src/api/client.ts`: the real RPC client (`POST /rpc/<command>`, HTTP statuses, the Queue's `ETag` and `If-Match`),
   with the transport injected.
 - `src/app/store.ts`: the single store; components are views over it.
 - `src/lib/`: pure logic (the draft Job, the tag grid's columns, the tree).
-- `src/components/`: the views.
+- `src/pages/` and `src/components/`: the views.
 - `src/mock/`: **POC only.** The mock server, sample data, and stand-ins for the server's name parsing, known tags and
   naming rules. These are simplified versions of what the server will do.
 - `src/poc/`: **POC only.** The controls panel.

@@ -20,7 +20,16 @@ import type {
   ServerEvent,
 } from '@re-name/protocol';
 import { QUEUE_COMMANDS } from '@re-name/protocol';
-import { CATALOGUE, findTitle, sizeOf, SOURCE_FILES, SOURCE_NAME, TARGET_FILES, TARGET_NAME } from './data.ts';
+import {
+  CATALOGUE,
+  findTitle,
+  sizeOf,
+  SOURCE_FILES,
+  SOURCE_NAME,
+  SOURCE_PATH,
+  TARGET_FILES,
+  TARGET_NAME,
+} from './data.ts';
 import { nameQueue, type QueuedDraft } from './naming.ts';
 import { isVideo, parseName } from './parse.ts';
 
@@ -48,6 +57,7 @@ interface State {
   moved: string[];
   nextJob: number;
   version: number;
+  optionsChosen: boolean;
   controls: MockControls;
 }
 
@@ -58,6 +68,7 @@ const initialState = (): State => ({
   moved: [],
   nextJob: 1,
   version: 1,
+  optionsChosen: false,
   controls: { latency: 'normal', failApplyAt: null, diskChanged: false, otherTab: false, dryRun: false },
 });
 
@@ -177,7 +188,14 @@ export class MockServer {
       case 'session.claim':
         if (s.controls.otherTab) fail(409, 'session-held', 're-name is already open in another tab.');
         return {
-          session: { sourceName: SOURCE_NAME, targetName: TARGET_NAME, dryRun: s.controls.dryRun },
+          session: {
+            sourceName: SOURCE_NAME,
+            sourcePath: SOURCE_PATH,
+            targetPath: `${SOURCE_PATH}/${TARGET_NAME}`,
+            targetName: TARGET_NAME,
+            dryRun: s.controls.dryRun,
+            optionsChosen: s.optionsChosen,
+          },
           options: s.options,
           queue: this.queue(),
         };
@@ -188,6 +206,7 @@ export class MockServer {
       case 'options.set':
         if (!['plex', 'jellyfin', 'emby'].includes(p.flavour)) fail(422, 'invalid-options', 'Unknown flavour.');
         s.options = { flavour: p.flavour, includeEpisodeName: Boolean(p.includeEpisodeName) };
+        s.optionsChosen = true;
         this.bump();
         return { options: s.options, queue: this.queue() };
       case 'tree.get':

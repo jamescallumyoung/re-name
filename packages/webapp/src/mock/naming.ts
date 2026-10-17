@@ -79,7 +79,8 @@ function nameFile(
   if (!season) warnings.push(`TMDB has no season ${file.season}.`);
   else if (!episode) warnings.push(`TMDB has no episode ${file.episode} in season ${file.season}.`);
   const code = `S${pad(file.season)}E${pad(file.episode)}`;
-  const tail = `${b ? ` - ${b}` : ''}.${ext}`;
+  // Plex puts a space before the brackets; Jellyfin and Emby use ` - ` (section 9.1).
+  const tail = `${b ? (options.flavour === 'plex' ? ` ${b}` : ` - ${b}`) : ''}.${ext}`;
   let name = `${base} - ${code}`;
   const episodeName = options.includeEpisodeName && episode?.name ? sanitise(episode.name) : null;
   if (episodeName && bytes(`${name} - ${episodeName}${tail}`) <= MAX_BYTES) name += ` - ${episodeName}`;

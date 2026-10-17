@@ -300,7 +300,7 @@ Each flavour uses **its server's own documented format**. The servers might read
 |---|---|---|---|
 | ID tag | `{tmdb-123}` (curly braces are required) | `[tmdbid-123]` | `[tmdbid=123]` |
 | ID in the movie file name | No | **Yes**: version detection needs the file to start with the folder name, ID included | **Yes**: the file must start with the folder name |
-| Before a movie's brackets | a space | ` - ` | ` - ` |
+| Before the brackets (movies and episodes) | a space | ` - ` | ` - ` |
 | Season folders | `Season 01` | `Season 01` | `Season 01` |
 | Specials | `Season 00` | `Season 00` | `Season 00` |
 | ID in episode file names | No | No | No |
@@ -318,12 +318,18 @@ Emby      Blade Runner 2049 (2017) [tmdbid=335984]/
             Blade Runner 2049 (2017) [tmdbid=335984] - [2160p BluRay HDR x265 -FraMeSToR].mkv
 ```
 
-**TV episode** (the same in every flavour apart from the ID tag):
+**TV episode** (the flavours differ only in the ID tag and in what comes before the brackets):
 
 ```
-Ted Lasso (2020) {tmdb-97546}/Season 04/
-  Ted Lasso (2020) - S04E03 - <Episode Name> - [1080p WEB-DL x265 -ELiTE].mkv
+Plex      Ted Lasso (2020) {tmdb-97546}/Season 04/
+            Ted Lasso (2020) - S04E03 - <Episode Name> [1080p WEB-DL x265 -ELiTE].mkv
+Jellyfin  Ted Lasso (2020) [tmdbid-97546]/Season 04/
+            Ted Lasso (2020) - S04E03 - <Episode Name> - [1080p WEB-DL x265 -ELiTE].mkv
+Emby      Ted Lasso (2020) [tmdbid=97546]/Season 04/
+            Ted Lasso (2020) - S04E03 - <Episode Name> - [1080p WEB-DL x265 -ELiTE].mkv
 ```
+
+Without an episode name, the brackets follow the episode code in the same way: `Ted Lasso (2020) - S04E03 [1080p …].mkv` for Plex, and `Ted Lasso (2020) - S04E03 - [1080p …].mkv` for Jellyfin and Emby.
 
 - **Title:** TMDB's name in `RENAME_TITLE_LANGUAGE`, falling back to the original language.
 - **Year:** a movie's release year. For TV, the first-air year, which every episode of a show shares.

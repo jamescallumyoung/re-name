@@ -1,236 +1,316 @@
-// The app shell: the overview (explorer and Queue) or the draft Job, plus the
-// questions, the apply progress and result, toasts, and the blocked and stopped
-// screens (design doc, sections 7 and 8.5).
+// The app shell, after Loadout's: the sidebar and the current page, the setup
+// modal shown once up front, the questions, the apply progress and result, toasts,
+// and the blocked and stopped screens (design doc, sections 7 and 8.5).
 
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { StoreController } from './store-controller.ts';
-import { shared } from '../styles/shared.ts';
-import '../components/app-header.ts';
-import '../components/draft-job.ts';
-import '../components/file-explorer.ts';
-import '../components/queue-panel.ts';
+import type { Page } from './store.ts';
+import { base, buttons, spinner } from '../styles/shared.ts';
+import { icon } from '../styles/icons.ts';
+import '../components/setup-modal.ts';
+import '../components/side-nav.ts';
+import '../pages/files-page.ts';
+import '../pages/job-page.ts';
+import '../pages/queue-page.ts';
+import '../pages/settings-page.ts';
 
 @customElement('re-name-app')
 export class ReNameApp extends LitElement {
   private readonly c = new StoreController(this);
 
   static override styles = [
-    shared,
+    base,
+    buttons,
+    spinner,
     css`
       :host {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
+        display: block;
+        min-height: 100%;
       }
       main {
-        flex: 1;
-        min-height: 0;
-        display: grid;
-        gap: 14px;
-        padding: 14px;
+        margin-left: 16rem;
       }
-      main.overview {
-        grid-template-columns: minmax(0, 1.25fr) minmax(360px, 1fr);
-      }
-      main.job {
-        grid-template-columns: minmax(0, 1fr);
+      .mobile-nav {
+        display: none;
       }
       @media (max-width: 900px) {
-        main.overview {
-          grid-template-columns: minmax(0, 1fr);
-          grid-template-rows: minmax(320px, 1fr) minmax(280px, auto);
+        main {
+          margin-left: 0;
+        }
+        .mobile-nav {
+          display: flex;
+          gap: 0.25rem;
+          padding: 0.6rem 1rem;
+          background: var(--panel);
+          border-bottom: 1px solid var(--line);
+          position: sticky;
+          top: 0;
+          z-index: 25;
+        }
+        .mobile-nav button {
+          padding: 0.4rem 0.75rem;
+          border-radius: 0.45rem;
+          color: var(--fg-2);
+          font-weight: 600;
+          font-size: 0.85rem;
+        }
+        .mobile-nav button[aria-current='page'] {
+          background: var(--accent-strong);
+          color: #fff;
         }
       }
       .center {
-        margin: auto;
-        max-width: 460px;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 2rem;
+      }
+      .center .box {
+        max-width: 28rem;
         text-align: center;
-        padding: 40px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.8rem;
       }
       .center h1 {
-        font-size: 20px;
-        margin: 0 0 8px;
+        margin: 0;
+        color: var(--fg);
+        font-size: 1.5rem;
+        font-weight: 800;
       }
       .center p {
-        color: var(--fg-2);
-        line-height: 1.5;
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
       }
-      .spinner {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        border: 3px solid var(--surface-3);
-        border-top-color: var(--accent);
-        animation: spin 0.8s linear infinite;
-        margin: 0 auto 12px;
+      .center .spin {
+        width: 1.6rem;
+        height: 1.6rem;
+        color: var(--accent);
       }
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
+      .mark {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 0.8rem;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        display: grid;
+        place-items: center;
+        color: #fff;
       }
       .overlay {
         position: fixed;
         inset: 0;
-        background: rgb(10 12 16 / 45%);
+        z-index: 50;
         display: grid;
         place-items: center;
-        z-index: 50;
-        padding: 20px;
+        padding: 1.25rem;
+        background: rgba(3, 7, 18, 0.72);
+        backdrop-filter: blur(4px);
       }
       .dialog {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        box-shadow: var(--shadow-lg);
-        width: min(520px, 100%);
-        max-height: 85vh;
+        width: min(32rem, 100%);
+        max-height: 88vh;
         overflow: auto;
-        padding: 20px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+      }
+      .dialog .body {
+        padding: 1.6rem 1.6rem 1.2rem;
       }
       .dialog h2 {
-        font-size: 17px;
-        margin: 0 0 8px;
+        margin: 0 0 0.6rem;
+        color: var(--fg);
+        font-size: 1.25rem;
+        font-weight: 800;
+        letter-spacing: -0.01em;
       }
       .dialog p {
+        margin: 0 0 0.8rem;
         color: var(--fg-2);
-        font-size: 14px;
-        line-height: 1.5;
-        margin: 0 0 10px;
+        line-height: 1.6;
       }
-      .dialog .buttons {
+      .dialog .mono {
+        color: var(--fg);
+      }
+      .dialog footer {
         display: flex;
         justify-content: flex-end;
-        gap: 8px;
-        margin-top: 18px;
+        gap: 0.6rem;
+        padding: 1rem 1.6rem;
+        background: var(--bg-deep);
+        border-top: 1px solid var(--line);
       }
       .dialog ul {
+        margin: 0 0 0.8rem;
+        padding-left: 1.1rem;
         font-family: var(--font-mono);
-        font-size: 11px;
-        color: var(--fg-2);
-        padding-left: 18px;
+        font-size: 0.75rem;
+        color: var(--muted);
       }
       .figures {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin: 14px 0;
+        gap: 0.6rem;
+        margin: 0.4rem 0 1rem;
       }
       .figure {
-        background: var(--surface-2);
-        border-radius: var(--radius);
-        padding: 10px;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 0.7rem;
+        padding: 0.8rem;
       }
       .figure b {
         display: block;
-        font-size: 22px;
+        color: var(--fg);
+        font-size: 1.6rem;
+        font-weight: 800;
       }
       .figure span {
-        font-size: 12px;
-        color: var(--fg-3);
+        color: var(--muted);
+        font-size: 0.8rem;
       }
-      progress {
-        width: 100%;
-        height: 8px;
-        accent-color: var(--accent);
+      .bar {
+        height: 0.5rem;
+        border-radius: 999px;
+        background: var(--bg);
+        overflow: hidden;
+        margin: 0.4rem 0 0.8rem;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent-strong), var(--accent-2));
+        transition: width 0.2s;
       }
       .current {
         font-family: var(--font-mono);
-        font-size: 11px;
-        color: var(--fg-3);
-        margin-top: 8px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        font-size: 0.72rem;
+        color: var(--muted);
+        overflow-wrap: anywhere;
       }
       .problem {
+        display: flex;
+        gap: 0.6rem;
+        padding: 0.8rem 0.9rem;
+        border-radius: 0.6rem;
         background: var(--bad-soft);
-        color: var(--bad);
-        border-radius: var(--radius-sm);
-        padding: 10px 12px;
-        font-size: 13px;
-        margin: 10px 0;
+        border: 1px solid rgba(248, 113, 113, 0.45);
+        color: var(--bad-text);
+        margin-bottom: 0.9rem;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
       }
       .log {
         font-family: var(--font-mono);
-        font-size: 11px;
-        background: var(--surface-2);
-        border-radius: var(--radius-sm);
-        padding: 8px;
+        font-size: 0.75rem;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 0.5rem;
+        padding: 0.6rem 0.7rem;
         overflow-wrap: anywhere;
+        color: var(--fg-2);
+        margin-bottom: 0.8rem;
       }
       .toasts {
         position: fixed;
-        right: 16px;
-        bottom: 16px;
+        right: 1.25rem;
+        bottom: 5rem;
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        z-index: 60;
-        max-width: 380px;
+        gap: 0.5rem;
+        z-index: 55;
+        max-width: 24rem;
       }
       .toast {
-        background: var(--fg);
-        color: var(--bg);
-        padding: 10px 14px;
-        border-radius: var(--radius);
-        font-size: 13px;
-        box-shadow: var(--shadow-lg);
-        border-left: 4px solid var(--accent);
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-radius: 0.7rem;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        color: var(--fg);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+        font-size: 0.875rem;
       }
-      .toast.ok {
-        border-left-color: var(--ok);
+      .toast svg {
+        width: 1.05rem;
+        height: 1.05rem;
       }
-      .toast.bad {
-        border-left-color: var(--bad);
+      .toast.ok svg {
+        color: var(--ok-text);
+      }
+      .toast.bad svg {
+        color: var(--bad-text);
+      }
+      .toast.info svg {
+        color: var(--muted);
       }
     `,
   ];
 
   override render() {
-    const { phase, reason } = this.c.store;
+    const store = this.c.store;
+    const { phase, reason } = store;
     if (phase === 'connecting') {
       return html`
         <div class="center">
-          <div class="spinner"></div>
-          <p>Connecting to re-name…</p>
+          <div class="box"><span class="spin"></span><p>Connecting to re-name…</p></div>
         </div>
       `;
     }
-    if (phase === 'blocked') {
+    if (phase === 'blocked' || phase === 'stopped') {
       return html`
         <div class="center">
-          <h1>re-name can’t open here</h1>
-          <p>${reason}</p>
+          <div class="box">
+            <span class="mark">${icon('rename')}</span>
+            <h1>${phase === 'blocked' ? 're-name can’t open here' : 're-name has stopped'}</h1>
+            <p>${reason}</p>
+          </div>
         </div>
       `;
     }
-    if (phase === 'stopped') {
-      return html`
-        <div class="center">
-          <h1>re-name has stopped</h1>
-          <p>${reason}</p>
-        </div>
-      `;
-    }
-    const { screen, draft } = this.c.store;
     return html`
-      <app-header></app-header>
-      ${screen === 'job' && draft
-        ? html`
-          <main class="job">
-            <draft-job></draft-job>
-          </main>
-        `
-        : html`
-          <main class="overview">
-            <file-explorer></file-explorer>
-            <queue-panel></queue-panel>
-          </main>
-        `}
-      ${this.renderPending()} ${this.renderApply()} ${this.renderToasts()}
+      <side-nav></side-nav>
+      <main>
+        ${this.renderMobileNav()} ${this.renderPage(store.page)}
+      </main>
+      ${store.setupOpen ? html`<setup-modal></setup-modal>` : nothing} ${this.renderPending()} ${this.renderApply()}
+      ${this.renderToasts()}
     `;
+  }
+
+  private renderPage(page: Page) {
+    switch (page) {
+      case 'files':
+        return html`<files-page></files-page>`;
+      case 'queue':
+        return html`<queue-page></queue-page>`;
+      case 'settings':
+        return html`<settings-page></settings-page>`;
+      case 'job':
+        return html`<job-page></job-page>`;
+    }
+  }
+
+  private renderMobileNav() {
+    const store = this.c.store;
+    const pages: [Page, string][] = [['files', 'Files'], ['queue', `Queue (${store.queue.jobs.length})`], [
+      'settings',
+      'Settings',
+    ]];
+    if (store.draft) pages.push(['job', 'Draft Job']);
+    return html`<nav class="mobile-nav">${
+      pages.map(([p, label]) =>
+        html`<button aria-current=${store.page === p ? 'page' : 'false'} @click=${() =>
+          store.goTo(p)}>${label}</button>`
+      )
+    }</nav>`;
   }
 
   private renderPending() {
@@ -238,46 +318,45 @@ export class ReNameApp extends LitElement {
     const pending = store.pending;
     if (!pending) return nothing;
     const files = store.queue.jobs.reduce((n, j) => n + j.draft.files.length, 0);
-    const [title, body, yes, danger] = pending.kind === 'discard-draft'
+    const dry = store.session?.dryRun ?? false;
+    const [title, body, yes, primary] = pending.kind === 'discard-draft'
       ? [
         'Discard the draft Job?',
-        html`<p>Only one draft can exist at a time. Its match, seasons and tag choices will be lost.</p>`,
-        'Discard draft',
-        true,
+        html`<p>Only one draft can exist at a time. Its match, seasons and tags will be lost.</p>`,
+        'Discard',
+        false,
       ]
       : pending.kind === 'remove-job'
       ? [
-        `Remove ${pending.job.match.title} from the Queue?`,
-        html`<p>Its ${pending.job.draft.files.length} files go back to the explorer and can be selected again.</p>`,
-        'Remove Job',
-        true,
+        `Remove ${pending.job.match.title}?`,
+        html`<p>Its ${pending.job.draft.files.length} files leave the Queue and can be selected again.</p>`,
+        'Remove',
+        false,
       ]
       : [
-        store.session?.dryRun ? 'Dry-run the Queue?' : 'Apply the Queue?',
+        dry ? 'Dry-run the Queue?' : 'Apply the Queue?',
         html`
           <p>
-                      ${store.session?.dryRun
-                        ? html`re-name was started with <span class="mono">--dry-run</span>, so nothing will be moved. You’ll get the
-                report.`
-                        : html`<b>${files} file${files === 1 ? '' : 's'}</b> in <b>${store.queue.jobs.length} Job${
-                          store.queue.jobs.length === 1 ? '' : 's'
+                      ${dry
+                        ? html`re-name was started with <span class="mono">--dry-run</span>, so nothing will be moved.`
+                        : html`<b>${files} file${
+                          files === 1 ? '' : 's'
                         }</b> will be renamed and moved into <span class="mono">${store.session?.targetName}/</span>.`}
                     </p>
-          <p>Every file is checked against the disk first. If anything changed since it was read, nothing is moved. The
-                      apply stops at the first error, and a log is written either way.</p>
+          <p class="muted">Every file is checked first: if anything changed on disk, nothing is moved. The apply stops at the
+                      first error, and a log is written either way.</p>
         `,
-        store.session?.dryRun ? 'Run' : 'Apply Queue',
-        false,
+        dry ? 'Run' : 'Apply',
+        true,
       ];
     return html`
       <div class="overlay" @click=${(e: Event) => e.target === e.currentTarget && store.answer(false)}>
         <div class="dialog" role="alertdialog" aria-modal="true" aria-label=${title}>
-          <h2>${title}</h2>
-          ${body}
-          <div class="buttons">
-            <button @click=${() => store.answer(false)}>Cancel</button>
-            <button class="primary ${danger ? 'danger' : ''}" @click=${() => store.answer(true)}>${yes}</button>
-          </div>
+          <div class="body"><h2>${title}</h2>${body}</div>
+          <footer>
+            <button class="btn" @click=${() => store.answer(false)}>Cancel</button>
+            <button class="btn ${primary ? 'primary' : 'danger'}" @click=${() => store.answer(true)}>${yes}</button>
+          </footer>
         </div>
       </div>
     `;
@@ -289,13 +368,15 @@ export class ReNameApp extends LitElement {
       return html`
         <div class="overlay">
           <div class="dialog" role="alertdialog" aria-modal="true">
-            <h2>The Queue wasn’t applied</h2>
-            <div class="problem">${store.applyError.message}</div>
-            ${store.applyError.details.length
-              ? html`<ul>${store.applyError.details.map((d) => html`<li>${d}</li>`)}</ul>`
-              : nothing}
-            <p>Nothing was moved. Check the files, then edit or remove the Jobs they belong to.</p>
-            <div class="buttons"><button class="primary" @click=${() => store.dismissApply()}>OK</button></div>
+            <div class="body">
+              <h2>Nothing was moved</h2>
+              <div class="problem">${icon('alert')} <span>${store.applyError.message}</span></div>
+              ${store.applyError.details.length
+                ? html`<ul>${store.applyError.details.map((d) => html`<li>${d}</li>`)}</ul>`
+                : nothing}
+              <p>Check those files, then edit or remove the Jobs they’re in.</p>
+            </div>
+            <footer><button class="btn primary" @click=${() => store.dismissApply()}>OK</button></footer>
           </div>
         </div>
       `;
@@ -305,13 +386,16 @@ export class ReNameApp extends LitElement {
     const result = apply.result;
     if (!result) {
       const p = apply.progress;
+      const pct = p ? Math.round((p.index / p.total) * 100) : 0;
       return html`
         <div class="overlay">
           <div class="dialog" role="dialog" aria-modal="true" aria-label="Applying the Queue">
-            <h2>${store.session?.dryRun ? 'Dry-running the Queue…' : 'Applying the Queue…'}</h2>
-            <p>${p ? `Moving file ${p.index + 1} of ${p.total}` : 'Checking every file against the disk…'}</p>
-            <progress max=${p?.total ?? 1} value=${p ? p.index : 0}></progress>
-            ${p ? html`<div class="current">${p.path}<br />→ ${p.newPath}</div>` : nothing}
+            <div class="body">
+              <h2>${store.session?.dryRun ? 'Dry-running the Queue' : 'Applying the Queue'}</h2>
+              <p>${p ? `Moving file ${p.index + 1} of ${p.total}` : 'Checking every file against the disk…'}</p>
+              <div class="bar"><i style="width:${pct}%"></i></div>
+              ${p ? html`<div class="current">${p.newPath.split('/').pop()}</div>` : nothing}
+            </div>
           </div>
         </div>
       `;
@@ -319,36 +403,33 @@ export class ReNameApp extends LitElement {
     return html`
       <div class="overlay">
         <div class="dialog" role="alertdialog" aria-modal="true">
-          <h2>
+          <div class="body">
+            <h2>
+              ${result.error
+                ? 'The apply stopped on an error'
+                : result.dryRun
+                ? 'Dry run finished'
+                : 'Your files are renamed'}
+            </h2>
+            <div class="figures">
+              <div class="figure"><b>${result.moved}</b><span>${result.dryRun ? 'would move' : 'moved'}</span></div>
+              <div class="figure"><b>${result.total - result.moved}</b><span>not moved</span></div>
+              <div class="figure"><b>${result.queue.jobs.length}</b><span>Jobs left</span></div>
+            </div>
             ${result.error
-              ? 'The apply stopped on an error'
-              : result.dryRun
-              ? 'Dry run complete: nothing was moved'
-              : 'The Queue was applied'}
-          </h2>
-          <div class="figures">
-            <div class="figure"><b>${result.moved}</b><span>${result.dryRun ? 'would move' : 'moved'}</span></div>
-            <div class="figure"><b>${result.total - result.moved}</b><span>not moved</span></div>
-            <div class="figure"><b>${result.queue.jobs.length}</b><span>Jobs left in Queue</span></div>
+              ? html`
+                <div class="problem">${icon('alert')} <span><b>${result.error.path.split('/').pop()}</b><br />${result
+                  .error.message}</span></div>
+                <p>Files already moved left their Jobs. The rest are still in the Queue.</p>
+              `
+              : !result.dryRun
+              ? html`<p>Move the folders in <span class="mono">${store.session?.targetName}/</span> into your media
+                server’s library when you’re ready.</p>`
+              : nothing}
+            <p class="muted">The log is at:</p>
+            <div class="log">${result.logPath}</div>
           </div>
-          ${result.error
-            ? html`
-              <div class="problem">
-                            <b>${result.error.path}</b><br />${result.error.message}
-                          </div>
-              <p>Files already moved were taken out of their Jobs. Everything else is still in the Queue.</p>
-            `
-            : nothing}
-          <p>The log, with the Queue as it was, is at:</p>
-          <div class="log">${result.logPath}</div>
-          ${!result.error && !result.dryRun
-            ? html`
-              <p
-                style="margin-top:10px">Move the renamed folders from <span class="mono">${store.session
-                  ?.targetName}/</span> into your media server’s library when you’re ready.</p>
-            `
-            : nothing}
-          <div class="buttons"><button class="primary" @click=${() => store.dismissApply()}>Done</button></div>
+          <footer><button class="btn primary" @click=${() => store.dismissApply()}>Done</button></footer>
         </div>
       </div>
     `;
@@ -356,7 +437,14 @@ export class ReNameApp extends LitElement {
 
   private renderToasts() {
     return html`<div class="toasts" role="status">
-      ${this.c.store.toasts.map((t) => html`<div class="toast ${t.tone}">${t.text}</div>`)}
+      ${
+      this.c.store.toasts.map(
+        (t) =>
+          html`<div class="toast ${t.tone}">${
+            icon(t.tone === 'ok' ? 'check' : t.tone === 'bad' ? 'alert' : 'queue')
+          } ${t.text}</div>`,
+      )
+    }
     </div>`;
   }
 }

@@ -1,13 +1,13 @@
-// Step 2, Seasons & episodes, TV only (design doc, section 7.2): a season dropdown
-// for each file, pre-set to the most likely season, with files grouped by folder.
+// Step 2, Seasons, TV only (design doc, section 7.2): a season dropdown for each
+// file, pre-set to the most likely season, with files grouped by folder.
 
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import type { AnalysedFile, Details } from '@re-name/protocol';
 import { StoreController } from '../app/store-controller.ts';
 import { groupByFolder } from '../lib/draft.ts';
-import { shared } from '../styles/shared.ts';
-import { renderNewName } from './new-name.ts';
+import { base, fields, pills } from '../styles/shared.ts';
+import { icon } from '../styles/icons.ts';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -16,86 +16,102 @@ export class SeasonsStep extends LitElement {
   private readonly c = new StoreController(this);
 
   static override styles = [
-    shared,
+    base,
+    fields,
+    pills,
     css`
       :host {
-        display: block;
-        padding: 16px 18px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
       }
-      .intro {
-        font-size: 14px;
-        margin: 0 0 16px;
+      .note {
+        color: var(--muted);
+        margin: 0;
       }
       section {
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        margin-bottom: 14px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 0.8rem;
         overflow: hidden;
       }
-      section > header {
+      header {
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 8px 12px;
-        background: var(--surface-2);
-        border-bottom: 1px solid var(--border);
-        font-size: 13px;
+        gap: 0.75rem;
+        padding: 0.8rem 1rem;
+        border-bottom: 1px solid var(--line);
+        flex-wrap: wrap;
       }
-      section > header .folder {
-        font-family: var(--font-mono);
-        font-weight: 600;
+      header .folder {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
         margin-right: auto;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-      }
-      th {
-        text-align: left;
-        font-size: 11px;
+        color: var(--fg);
         font-weight: 600;
-        color: var(--fg-3);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        padding: 6px 12px;
+        min-width: 0;
       }
-      td {
-        padding: 6px 12px;
-        border-top: 1px solid var(--border);
-        vertical-align: top;
-      }
-      td.file {
-        font-family: var(--font-mono);
-        font-size: 11px;
-        color: var(--fg-2);
-        max-width: 360px;
+      header .folder span {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+      header .folder svg {
+        width: 1.05rem;
+        height: 1.05rem;
+        color: var(--muted);
+        flex: none;
+      }
+      header label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) 10rem 5rem minmax(0, 1.4fr);
+        gap: 1rem;
+        align-items: center;
+        padding: 0.65rem 1rem;
+        border-top: 1px solid var(--line-soft);
+      }
+      header + .row {
+        border-top: none;
+      }
+      .file {
+        min-width: 0;
+      }
+      .file .code {
+        color: var(--fg);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      .file .name {
+        color: var(--faint);
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .tmdb {
+        color: var(--fg-2);
+        min-width: 0;
+      }
+      .tmdb .placeholder {
+        color: var(--faint);
+        font-style: italic;
       }
       input[type='number'] {
-        width: 64px;
+        width: 100%;
       }
-      .episode-name {
-        font-size: 13px;
-      }
-      .new {
-        font-family: var(--font-mono);
-        font-size: 11px;
-        color: var(--fg-3);
-        margin-top: 3px;
-        white-space: nowrap;
-      }
-      .dup {
-        background: var(--warn-soft);
-        color: var(--warn);
-        border-radius: 3px;
-        padding: 0 3px;
-        font-weight: 700;
+      @media (max-width: 900px) {
+        .row {
+          grid-template-columns: 1fr 1fr;
+        }
       }
     `,
   ];
@@ -104,12 +120,9 @@ export class SeasonsStep extends LitElement {
     const draft = this.c.store.draft;
     if (!draft) return nothing;
     const details = draft.details;
-    if (!details) return html`<p class="intro muted">Loading seasons from TMDB…</p>`;
+    if (!details) return html`<p class="note">Loading seasons from TMDB…</p>`;
     return html`
-      <p class="intro">
-        Check each file’s season and episode against <b>${details.title}</b> on TMDB. Seasons are pre-set from the names
-        and folders.
-      </p>
+      <p class="note">Check each file’s season and episode against ${details.title} on TMDB.</p>
       ${groupByFolder(draft.files).map(([folder, files]) => this.renderFolder(folder, files, details))}
     `;
   }
@@ -121,7 +134,7 @@ export class SeasonsStep extends LitElement {
     return html`
       <section>
         <header>
-          <span class="folder">📁 ${folder || `${store.session?.sourceName}/ (top level)`}</span>
+          <span class="folder">${icon('folder')}<span>${folder || `${store.session?.sourceName}/`}</span></span>
           <label>
             Season for all
             <select
@@ -135,17 +148,7 @@ export class SeasonsStep extends LitElement {
             </select>
           </label>
         </header>
-        <table>
-          <thead>
-            <tr>
-              <th>File</th>
-              <th>Season</th>
-              <th>Episode</th>
-              <th>On TMDB</th>
-            </tr>
-          </thead>
-          <tbody>${files.map((f) => this.renderRow(f, details))}</tbody>
-        </table>
+        ${files.map((f) => this.renderRow(f, details))}
       </section>
     `;
   }
@@ -162,8 +165,8 @@ export class SeasonsStep extends LitElement {
       ${details.seasons.map(
         (s) =>
           html`<option value=${s.season} .selected=${s.season === chosen}>${
-            s.season === 0 ? 'Specials (Season 00)' : `Season ${pad(s.season)}`
-          } · ${s.episodes.length} ep</option>`,
+            s.season === 0 ? 'Specials' : `Season ${s.season}`
+          }</option>`,
       )}
     `;
   }
@@ -173,50 +176,45 @@ export class SeasonsStep extends LitElement {
     const choice = store.draft?.episodes[file.path] ?? { season: null, episode: null };
     const season = details.seasons.find((s) => s.season === choice.season);
     const episode = season?.episodes.find((e) => e.episode === choice.episode);
-    const preview = store.draft?.preview?.files.find((f) => f.path === file.path);
     const name = file.path.slice(file.path.lastIndexOf('/') + 1);
+    const code = choice.season !== null && choice.episode !== null
+      ? `S${pad(choice.season)}E${pad(choice.episode)}`
+      : 'S??E??';
     return html`
-      <tr>
-        <td class="file" title=${file.path}>
-          ${name}
-          ${file.season !== null
-            ? html`<div><span class="badge">read as S${pad(file.season)}E${pad(file.episode ?? 0)}</span></div>`
-            : nothing}
-        </td>
-        <td>
-          <select
-            @change=${(e: Event) => {
-              const v = (e.target as HTMLSelectElement).value;
-              store.setEpisode(file.path, { season: v === '' ? null : Number(v) });
-            }}
-          >${this.seasonOptions(details, choice.season)}</select>
-        </td>
-        <td>
-          <input
-            type="number"
-            min="0"
-            .value=${choice.episode === null ? '' : String(choice.episode)}
-            @input=${(e: Event) => {
-              const v = (e.target as HTMLInputElement).value;
-              store.setEpisode(file.path, { episode: v === '' ? null : Number(v) });
-            }}
-          />
-        </td>
-        <td>
+      <div class="row">
+        <div class="file" title=${file.path}>
+          <div class="code">${code}</div>
+          <div class="name">${name}</div>
+        </div>
+        <select
+          aria-label=${`Season of ${name}`}
+          @change=${(e: Event) => {
+            const v = (e.target as HTMLSelectElement).value;
+            store.setEpisode(file.path, { season: v === '' ? null : Number(v) });
+          }}
+        >${this.seasonOptions(details, choice.season)}</select>
+        <input
+          type="number"
+          min="0"
+          aria-label=${`Episode of ${name}`}
+          .value=${choice.episode === null ? '' : String(choice.episode)}
+          @input=${(e: Event) => {
+            const v = (e.target as HTMLInputElement).value;
+            store.setEpisode(file.path, { episode: v === '' ? null : Number(v) });
+          }}
+        />
+        <div class="tmdb">
           ${choice.season === null
-            ? html`<span class="badge bad">Choose a season</span>`
+            ? html`<span class="pill bad">${icon('alert')} Choose a season</span>`
             : !season
-            ? html`<span class="badge warn">No such season on TMDB</span>`
+            ? html`<span class="pill warn">No such season on TMDB</span>`
             : !episode
-            ? html`<span class="badge warn">No episode ${choice.episode ?? '?'} in this season</span>`
+            ? html`<span class="pill warn">Not in season ${choice.season}</span>`
             : episode.name
-            ? html`<span class="episode-name">${episode.name}</span>`
-            : html`<span class="muted" title="TMDB only has a placeholder name, so it’s left out">No name yet on TMDB</span>`}
-          ${preview?.newPath
-            ? html`<div class="new">→ ${renderNewName(preview.newPath.split('/').pop() ?? '')}</div>`
-            : nothing}
-        </td>
-      </tr>
+            ? episode.name
+            : html`<span class="placeholder" title="TMDB only has a placeholder, so the name is left out">No name on TMDB yet</span>`}
+        </div>
+      </div>
     `;
   }
 }

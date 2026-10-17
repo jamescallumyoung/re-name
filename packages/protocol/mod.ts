@@ -15,9 +15,15 @@ export interface Options {
 export interface SessionInfo {
   /** The source folder's own name. */
   sourceName: string;
+  /** The source folder's full path, as the server sees it. */
+  sourcePath: string;
+  /** The target folder's full path. */
+  targetPath: string;
   /** The target, relative to the source when it's inside it. */
   targetName: string;
   dryRun: boolean;
+  /** False until the options have been chosen in this run: the webapp asks for them up front. */
+  optionsChosen: boolean;
 }
 
 // ---------- the source tree ----------
