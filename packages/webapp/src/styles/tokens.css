@@ -46,3 +46,154 @@
   --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
+
+/* ---------- Header colours: one set per area, switchable presets ----------
+   Each area (the Files card, the Queue card, and every modal) has its own header
+   colours: background, title, secondary text, accent (text buttons, highlights),
+   and a filled button that stays readable on that background. `data-headers` on
+   <html> picks a preset; the POC switches between them. */
+
+/* 1. Tonal (default): Material-style containers in dark gold, sage and sand. */
+:root,
+:root[data-headers='tonal'] {
+  --files-bg: #4a3a10;
+  --files-fg: #ffe4a3;
+  --files-muted: #d9c48f;
+  --files-accent: #f2c14e;
+  --files-btn-bg: #f2c14e;
+  --files-btn-fg: #2a1f00;
+
+  --queue-bg: #2f4d36;
+  --queue-fg: #d4f2da;
+  --queue-muted: #a9cbb0;
+  --queue-accent: #aed0b2;
+  --queue-btn-bg: #f2c14e;
+  --queue-btn-fg: #2a1f00;
+
+  --modal-bg: #4d4430;
+  --modal-fg: #f6e8c4;
+  --modal-muted: #d2c39c;
+  --modal-accent: #f2c14e;
+  --modal-btn-bg: #f2c14e;
+  --modal-btn-fg: #2a1f00;
+}
+
+/* 2. Filled: solid gold, sage and sand, with dark text. */
+:root[data-headers='filled'] {
+  --files-bg: #f2c14e;
+  --files-fg: #2a1f00;
+  --files-muted: #5c4710;
+  --files-accent: #2a1f00;
+  --files-btn-bg: #2a1f00;
+  --files-btn-fg: #f2c14e;
+
+  --queue-bg: #aed0b2;
+  --queue-fg: #0f2a17;
+  --queue-muted: #2f4d36;
+  --queue-accent: #0f2a17;
+  --queue-btn-bg: #0f2a17;
+  --queue-btn-fg: #c9ecd0;
+
+  --modal-bg: #d6c5a0;
+  --modal-fg: #2b2410;
+  --modal-muted: #574b2c;
+  --modal-accent: #2b2410;
+  --modal-btn-bg: #2b2410;
+  --modal-btn-fg: #f1e2bc;
+}
+
+/* 3. Cool: teal and indigo against the gold. */
+:root[data-headers='cool'] {
+  --files-bg: #163f45;
+  --files-fg: #c8f2f4;
+  --files-muted: #8fc7cc;
+  --files-accent: #7fd8de;
+  --files-btn-bg: #f2c14e;
+  --files-btn-fg: #2a1f00;
+
+  --queue-bg: #3d3010;
+  --queue-fg: #ffe4a3;
+  --queue-muted: #cdb67a;
+  --queue-accent: #f2c14e;
+  --queue-btn-bg: #f2c14e;
+  --queue-btn-fg: #2a1f00;
+
+  --modal-bg: #26304f;
+  --modal-fg: #dbe3ff;
+  --modal-muted: #a3b0d8;
+  --modal-accent: #a9b8f5;
+  --modal-btn-bg: #f2c14e;
+  --modal-btn-fg: #2a1f00;
+}
+
+/* 4. Warm spectrum: amber, terracotta and plum. */
+:root[data-headers='warm'] {
+  --files-bg: #5a3a0c;
+  --files-fg: #ffdcab;
+  --files-muted: #dcb27a;
+  --files-accent: #ffb95a;
+  --files-btn-bg: #f2c14e;
+  --files-btn-fg: #2a1f00;
+
+  --queue-bg: #5c2a1e;
+  --queue-fg: #ffd6c9;
+  --queue-muted: #d9a493;
+  --queue-accent: #ff9f80;
+  --queue-btn-bg: #f2c14e;
+  --queue-btn-fg: #2a1f00;
+
+  --modal-bg: #432437;
+  --modal-fg: #f8d8ec;
+  --modal-muted: #cfa2bf;
+  --modal-accent: #e9a3cf;
+  --modal-btn-bg: #f2c14e;
+  --modal-btn-fg: #2a1f00;
+}
+
+/* 5. Light: cream, gold and parchment headers on the dark page. */
+:root[data-headers='light'] {
+  --files-bg: #ede7da;
+  --files-fg: #1d1a14;
+  --files-muted: #5e574a;
+  --files-accent: #7a5a00;
+  --files-btn-bg: #1d1a14;
+  --files-btn-fg: #ede7da;
+
+  --queue-bg: #f2c14e;
+  --queue-fg: #2a1f00;
+  --queue-muted: #5c4710;
+  --queue-accent: #2a1f00;
+  --queue-btn-bg: #2a1f00;
+  --queue-btn-fg: #f2c14e;
+
+  --modal-bg: #f5efe2;
+  --modal-fg: #1d1a14;
+  --modal-muted: #5e574a;
+  --modal-accent: #7a5a00;
+  --modal-btn-bg: #2a1f00;
+  --modal-btn-fg: #f2c14e;
+}
+
+/* 6. Ink: near-black with gold titles, slate, and deep wine. */
+:root[data-headers='ink'] {
+  --files-bg: #0a0907;
+  --files-fg: #f2c14e;
+  --files-muted: #9d9686;
+  --files-accent: #f2c14e;
+  --files-btn-bg: #f2c14e;
+  --files-btn-fg: #2a1f00;
+
+  --queue-bg: #2b3437;
+  --queue-fg: #e4eef0;
+  --queue-muted: #a5b6ba;
+  --queue-accent: #9fd0d6;
+  --queue-btn-bg: #f2c14e;
+  --queue-btn-fg: #2a1f00;
+
+  --modal-bg: #3f1d22;
+  --modal-fg: #ffdcd8;
+  --modal-muted: #d5a6a1;
+  --modal-accent: #ffaaa0;
+  --modal-btn-bg: #f2c14e;
+  --modal-btn-fg: #2a1f00;
+}

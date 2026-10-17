@@ -7,7 +7,7 @@ import { customElement } from 'lit/decorators.js';
 import type { FileNode, FolderNode, SkipReason, TreeNode } from '@re-name/protocol';
 import { StoreController } from '../app/store-controller.ts';
 import { filesUnder, folderCheck, folderPaths, formatBytes, isSelectable } from '../lib/tree.ts';
-import { base, buttons, card, fields, tags } from '../styles/shared.ts';
+import { base, buttons, card, fields, headerArea, tags } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 
 const SKIP: Record<SkipReason, { label: string; why: string }> = {
@@ -26,9 +26,9 @@ export class FilesSection extends LitElement {
     fields,
     tags,
     card,
+    headerArea('files'),
     css`
       .selected-count {
-        color: var(--primary);
         font-weight: 600;
       }
       .rows {
@@ -118,7 +118,7 @@ export class FilesSection extends LitElement {
       <div class="head">
         <h2>Files</h2>
         ${selection.size
-          ? html`<span class="selected-count">${selection.size} selected · ${formatBytes(bytes)}</span>`
+          ? html`<span class="hl selected-count">${selection.size} selected · ${formatBytes(bytes)}</span>`
           : html`<span class="count">${available} of ${files.length} video files available</span>`}
         <span class="grow"></span>
         <button class="btn sm text" @click=${() => store.selectAll()} ?disabled=${available === 0}>Select all</button>

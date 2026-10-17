@@ -6,7 +6,7 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { StoreController } from './store-controller.ts';
-import { base, buttons } from '../styles/shared.ts';
+import { base, buttons, headColours, headerArea } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 import { FLAVOUR_LABEL } from '../components/app-header.ts';
 import '../components/app-header.ts';
@@ -23,6 +23,8 @@ export class ReNameApp extends LitElement {
   static override styles = [
     base,
     buttons,
+    headColours,
+    headerArea('modal', '.dialog'),
     css`
       /* The page never scrolls: the app bar stays put, and only the overview scrolls. */
       :host {
@@ -82,20 +84,27 @@ export class ReNameApp extends LitElement {
         border-radius: var(--radius-lg);
         background: var(--surface-2);
         box-shadow: var(--shadow-3);
-        padding: 24px;
+      }
+      .dialog .head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 64px;
+        padding: 12px 24px;
+      }
+      .dialog .dbody {
+        padding: 20px 24px 24px;
       }
       .dialog .icon {
-        display: block;
-        margin-bottom: 12px;
-        color: var(--primary);
+        display: grid;
+        color: var(--h-accent);
       }
       .dialog .icon svg {
         width: 24px;
         height: 24px;
       }
       .dialog h2 {
-        margin: 0 0 14px;
-        color: var(--fg);
+        margin: 0;
         font-size: 20px;
         font-weight: 600;
       }
@@ -297,13 +306,16 @@ export class ReNameApp extends LitElement {
     return html`
       <div class="overlay" @click=${(e: Event) => e.target === e.currentTarget && store.answer(false)}>
         <div class="dialog" role="alertdialog" aria-modal="true" aria-label=${title}>
-          <span class="icon">${icon(pending.kind === 'apply' ? 'play' : 'alert')}</span>
-          <h2>${title}</h2>
+          <div class="head"><span class="icon">${icon(
+            pending.kind === 'apply' ? 'play' : 'alert',
+          )}</span><h2>${title}</h2></div>
+          <div class="dbody">
           ${body}
           <div class="buttons">
             <button class="btn text" @click=${() => store.answer(false)}>Cancel</button>
             <button class="btn ${primary ? 'primary' : 'text danger'}" @click=${() =>
               store.answer(true)}>${yes}</button>
+          </div>
           </div>
         </div>
       </div>
@@ -316,14 +328,15 @@ export class ReNameApp extends LitElement {
       return html`
         <div class="overlay">
           <div class="dialog" role="alertdialog" aria-modal="true">
-            <span class="icon">${icon('alert')}</span>
-            <h2>Nothing was moved</h2>
+            <div class="head"><span class="icon">${icon('alert')}</span><h2>Nothing was moved</h2></div>
+            <div class="dbody">
             <div class="problem">${icon('alert')}<span>${store.applyError.message}</span></div>
             ${store.applyError.details.length
               ? html`<ul>${store.applyError.details.map((d) => html`<li>${d}</li>`)}</ul>`
               : nothing}
             <p>Check those files, then edit or remove the Jobs they’re in.</p>
             <div class="buttons"><button class="btn primary" @click=${() => store.dismissApply()}>OK</button></div>
+            </div>
           </div>
         </div>
       `;
@@ -337,11 +350,14 @@ export class ReNameApp extends LitElement {
       return html`
         <div class="overlay">
           <div class="dialog" role="dialog" aria-modal="true" aria-label="Applying the Queue">
-            <span class="icon">${icon('play')}</span>
-            <h2>${store.session?.dryRun ? 'Dry-running the Queue' : 'Applying the Queue'}</h2>
+            <div class="head"><span class="icon">${icon('play')}</span><h2>${store.session?.dryRun
+              ? 'Dry-running the Queue'
+              : 'Applying the Queue'}</h2></div>
+            <div class="dbody">
             <p>${p ? `Moving file ${p.index + 1} of ${p.total}` : 'Checking every file against the disk…'}</p>
             <div class="bar"><i style="width:${pct}%"></i></div>
             ${p ? html`<div class="current">${p.newPath}</div>` : nothing}
+            </div>
           </div>
         </div>
       `;
@@ -349,12 +365,12 @@ export class ReNameApp extends LitElement {
     return html`
       <div class="overlay">
         <div class="dialog" role="alertdialog" aria-modal="true">
-          <span class="icon">${icon(result.error ? 'alert' : 'check')}</span>
-          <h2>${result.error
+          <div class="head"><span class="icon">${icon(result.error ? 'alert' : 'check')}</span><h2>${result.error
             ? 'The apply stopped on an error'
             : result.dryRun
             ? 'Dry run finished'
-            : 'Queue applied'}</h2>
+            : 'Queue applied'}</h2></div>
+          <div class="dbody">
           <dl class="kv">
             <dt>${result.dryRun ? 'Would move' : 'Moved'}</dt>
             <dd class="big">${result.moved}</dd>
@@ -376,6 +392,7 @@ export class ReNameApp extends LitElement {
               server’s library when you’re ready.</p>`
             : nothing}
           <div class="buttons"><button class="btn primary" @click=${() => store.dismissApply()}>Done</button></div>
+          </div>
         </div>
       </div>
     `;

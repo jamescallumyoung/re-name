@@ -5,7 +5,7 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { Options } from '@re-name/protocol';
 import { StoreController } from '../app/store-controller.ts';
-import { base, buttons } from '../styles/shared.ts';
+import { base, buttons, headColours, headerArea } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 import './options-form.ts';
 
@@ -23,6 +23,8 @@ export class SettingsModal extends LitElement {
   static override styles = [
     base,
     buttons,
+    headColours,
+    headerArea('modal'),
     css`
       :host {
         position: fixed;
@@ -50,17 +52,16 @@ export class SettingsModal extends LitElement {
       .head h1 {
         margin: 0;
         flex: 1;
-        color: var(--fg);
         font-size: 20px;
         font-weight: 600;
       }
-      .head svg {
+      .head > svg {
         width: 22px;
         height: 22px;
-        color: var(--primary);
+        color: var(--h-accent);
       }
       .body {
-        padding: 4px 24px 20px;
+        padding: 20px 24px 20px;
         display: grid;
         gap: 20px;
       }

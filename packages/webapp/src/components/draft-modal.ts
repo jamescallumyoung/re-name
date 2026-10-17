@@ -6,7 +6,7 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { StoreController } from '../app/store-controller.ts';
 import { type Step, stepsOf } from '../lib/draft.ts';
-import { base, buttons, tags } from '../styles/shared.ts';
+import { base, buttons, headColours, headerArea, tags } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 import './match-step.ts';
 import './poster-art.ts';
@@ -23,6 +23,8 @@ export class DraftModal extends LitElement {
     base,
     buttons,
     tags,
+    headColours,
+    headerArea('modal'),
     css`
       :host {
         position: fixed;
@@ -51,7 +53,6 @@ export class DraftModal extends LitElement {
         gap: 14px;
         min-height: 72px;
         padding: 12px 16px 12px 24px;
-        border-bottom: 1px solid var(--line);
       }
       header poster-art {
         width: 32px;
@@ -61,7 +62,7 @@ export class DraftModal extends LitElement {
         min-width: 0;
       }
       .kind {
-        color: var(--primary);
+        color: var(--h-accent);
         font-size: 12px;
         font-weight: 700;
         letter-spacing: 0.06em;
@@ -69,7 +70,6 @@ export class DraftModal extends LitElement {
       }
       h1 {
         margin: 0;
-        color: var(--fg);
         font-size: 20px;
         font-weight: 700;
         overflow: hidden;
@@ -78,7 +78,7 @@ export class DraftModal extends LitElement {
       }
       h1 .y,
       h1 .n {
-        color: var(--muted);
+        color: var(--h-muted);
         font-weight: 400;
       }
       .steps {
@@ -181,7 +181,7 @@ export class DraftModal extends LitElement {
     const m = draft.match;
     return html`
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="title" @keydown=${this.onKey}>
-        <header>
+        <header class="head">
           ${m
             ? html`<poster-art label=${m.title} year=${m.year} type=${m.type} tmdb-id=${m.tmdbId}></poster-art>`
             : nothing}

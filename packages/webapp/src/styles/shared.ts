@@ -1,7 +1,7 @@
 // Shared component styles, loosely after Material 3: tonal surfaces, filled and tonal
 // buttons, state layers on hover. Colours and fonts come from tokens.css.
 
-import { css } from 'lit';
+import { css, unsafeCSS } from 'lit';
 
 /** Base rules every component adopts. */
 export const base = css`
@@ -210,6 +210,68 @@ export const tags = css`
   }
 `;
 
+/** The areas with their own header colours (tokens.css). */
+export type HeaderArea = 'files' | 'queue' | 'modal';
+
+/** Maps an area's header colours onto the `--h-*` properties that `.head` uses, on `selector`. */
+export function headerArea(area: HeaderArea, selector = ':host') {
+  return unsafeCSS(`${selector} {
+    --h-bg: var(--${area}-bg);
+    --h-fg: var(--${area}-fg);
+    --h-muted: var(--${area}-muted);
+    --h-accent: var(--${area}-accent);
+    --h-btn-bg: var(--${area}-btn-bg);
+    --h-btn-fg: var(--${area}-btn-fg);
+  }`);
+}
+
+/** A contrasting header bar: everything in `.head` takes the area's colours. */
+export const headColours = css`
+  .head {
+    background: var(--h-bg);
+    color: var(--h-muted);
+    border-bottom-color: transparent;
+  }
+  .head h1,
+  .head h2,
+  .head .title {
+    color: var(--h-fg);
+  }
+  .head .count,
+  .head .muted {
+    color: var(--h-muted);
+  }
+  .head .hl {
+    color: var(--h-accent);
+  }
+  .head .btn.text,
+  .head .btn.text.danger {
+    color: var(--h-accent);
+  }
+  .head .btn.text:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--h-accent) 16%, transparent);
+  }
+  .head .btn.primary {
+    background: var(--h-btn-bg);
+    border-color: var(--h-btn-bg);
+    color: var(--h-btn-fg);
+  }
+  .head .btn.primary:hover:not(:disabled) {
+    background: var(--h-btn-bg);
+    filter: brightness(1.08);
+  }
+  .head .icon-btn {
+    color: var(--h-muted);
+  }
+  .head .icon-btn:hover:not(:disabled) {
+    color: var(--h-fg);
+    background: color-mix(in srgb, var(--h-fg) 12%, transparent);
+  }
+  .head :focus-visible {
+    outline-color: var(--h-fg);
+  }
+`;
+
 /** A card on the overview: a title row, then its body. */
 export const card = css`
   :host {
@@ -228,14 +290,11 @@ export const card = css`
     border-bottom: 1px solid var(--line);
     flex-wrap: wrap;
   }
-  .head h2 {
+  ${headColours} /* Colours come from headColours. */
+    .head h2 {
     margin: 0;
-    color: var(--fg);
     font-size: 17px;
     font-weight: 700;
-  }
-  .head .count {
-    color: var(--muted);
   }
   .head .grow {
     flex: 1;

@@ -5,7 +5,7 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import type { Job, PreviewFile } from '@re-name/protocol';
 import { StoreController } from '../app/store-controller.ts';
-import { base, buttons, card, tags } from '../styles/shared.ts';
+import { base, buttons, card, headerArea, tags } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 import { renderNewName } from './new-name.ts';
 import './poster-art.ts';
@@ -43,9 +43,10 @@ export class QueueSection extends LitElement {
     buttons,
     tags,
     card,
+    headerArea('queue'),
     css`
       .target {
-        color: var(--muted);
+        color: var(--h-muted);
         font-family: var(--font-mono);
         font-size: 13px;
       }
