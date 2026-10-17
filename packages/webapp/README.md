@@ -33,10 +33,6 @@ There are two views: the **overview** (Files, then the Queue) and the **draft Jo
 5. **Edit** or remove a Job, or change the options from the app bar, and watch the names change.
 6. **Apply Queue**: the confirm dialog lists the settings it will use, then shows progress and a result.
 
-**Header colours**: the Files card, the Queue card and every modal each have a contrasting header colour. Six presets
-are there to compare: tonal, filled, cool, warm, light and ink. Switch with the **Headers 1–6** strip by the POC button,
-or with `?headers=<name>` in the URL; the choice is remembered.
-
 **POC controls**, at the bottom left, drive the mock server: latency, a failing apply, files changed on disk,
 `--dry-run`, another tab holding the session, Ctrl-C, and a reset. The mock server's state survives a reload (as the
 real server's would); the draft Job doesn't (as designed). In DevTools, `reNamePoc.store` and `reNamePoc.server` are

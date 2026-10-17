@@ -1,7 +1,7 @@
 // Shared component styles, loosely after Material 3: tonal surfaces, filled and tonal
 // buttons, state layers on hover. Colours and fonts come from tokens.css.
 
-import { css, unsafeCSS } from 'lit';
+import { css } from 'lit';
 
 /** Base rules every component adopts. */
 export const base = css`
@@ -84,7 +84,7 @@ export const buttons = css`
     color: var(--on-primary-container);
   }
   .btn.tonal:hover:not(:disabled) {
-    background: #574416;
+    background: color-mix(in srgb, var(--primary-container) 85%, var(--primary));
   }
   .btn.text {
     border-color: transparent;
@@ -179,8 +179,9 @@ export const tags = css`
     height: 24px;
     padding: 0 8px;
     border-radius: var(--radius-sm);
-    border: 1px solid var(--line-strong);
-    color: var(--fg-2);
+    border: 1px solid transparent;
+    background: var(--secondary-container);
+    color: var(--on-secondary-container);
     font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
@@ -206,69 +207,55 @@ export const tags = css`
   }
   .tag.dim {
     border-color: var(--line);
+    background: none;
     color: var(--faint);
   }
 `;
 
-/** The areas with their own header colours (tokens.css). */
-export type HeaderArea = 'files' | 'queue' | 'modal';
-
-/** Maps an area's header colours onto the `--h-*` properties that `.head` uses, on `selector`. */
-export function headerArea(area: HeaderArea, selector = ':host') {
-  return unsafeCSS(`${selector} {
-    --h-bg: var(--${area}-bg);
-    --h-fg: var(--${area}-fg);
-    --h-muted: var(--${area}-muted);
-    --h-accent: var(--${area}-accent);
-    --h-btn-bg: var(--${area}-btn-bg);
-    --h-btn-fg: var(--${area}-btn-fg);
-  }`);
-}
-
-/** A contrasting header bar: everything in `.head` takes the area's colours. */
+/** The shared header bar: everything in `.head` takes the header colours (tokens.css). */
 export const headColours = css`
   .head {
-    background: var(--h-bg);
-    color: var(--h-muted);
+    background: var(--head-bg);
+    color: var(--head-muted);
     border-bottom-color: transparent;
   }
   .head h1,
   .head h2,
   .head .title {
-    color: var(--h-fg);
+    color: var(--head-fg);
   }
   .head .count,
   .head .muted {
-    color: var(--h-muted);
+    color: var(--head-muted);
   }
   .head .hl {
-    color: var(--h-accent);
+    color: var(--head-accent);
   }
   .head .btn.text,
   .head .btn.text.danger {
-    color: var(--h-accent);
+    color: var(--head-accent);
   }
   .head .btn.text:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--h-accent) 16%, transparent);
+    background: color-mix(in srgb, var(--head-accent) 16%, transparent);
   }
   .head .btn.primary {
-    background: var(--h-btn-bg);
-    border-color: var(--h-btn-bg);
-    color: var(--h-btn-fg);
+    background: var(--head-btn-bg);
+    border-color: var(--head-btn-bg);
+    color: var(--head-btn-fg);
   }
   .head .btn.primary:hover:not(:disabled) {
-    background: var(--h-btn-bg);
+    background: var(--head-btn-bg);
     filter: brightness(1.08);
   }
   .head .icon-btn {
-    color: var(--h-muted);
+    color: var(--head-muted);
   }
   .head .icon-btn:hover:not(:disabled) {
-    color: var(--h-fg);
-    background: color-mix(in srgb, var(--h-fg) 12%, transparent);
+    color: var(--head-fg);
+    background: color-mix(in srgb, var(--head-fg) 12%, transparent);
   }
   .head :focus-visible {
-    outline-color: var(--h-fg);
+    outline-color: var(--head-fg);
   }
 `;
 

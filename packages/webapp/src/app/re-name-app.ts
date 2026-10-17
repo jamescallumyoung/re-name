@@ -6,7 +6,7 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { StoreController } from './store-controller.ts';
-import { base, buttons, headColours, headerArea } from '../styles/shared.ts';
+import { base, buttons, headColours } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 import { FLAVOUR_LABEL } from '../components/app-header.ts';
 import '../components/app-header.ts';
@@ -24,7 +24,6 @@ export class ReNameApp extends LitElement {
     base,
     buttons,
     headColours,
-    headerArea('modal', '.dialog'),
     css`
       /* The page never scrolls: the app bar stays put, and only the overview scrolls. */
       :host {
@@ -97,7 +96,7 @@ export class ReNameApp extends LitElement {
       }
       .dialog .icon {
         display: grid;
-        color: var(--h-accent);
+        color: var(--head-accent);
       }
       .dialog .icon svg {
         width: 24px;

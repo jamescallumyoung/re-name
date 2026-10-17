@@ -5,7 +5,6 @@ import { css, html, LitElement } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { MockControls, MockServer } from '../mock/server.ts';
 import { base, buttons } from '../styles/shared.ts';
-import { applyPreset, currentPreset, HEADER_PRESETS } from './header-presets.ts';
 
 @customElement('poc-panel')
 export class PocPanel extends LitElement {
@@ -13,8 +12,6 @@ export class PocPanel extends LitElement {
   accessor server: MockServer | null = null;
   @state()
   accessor open = false;
-  @state()
-  accessor preset = currentPreset();
   @state()
   accessor controls: MockControls | null = null;
 
@@ -32,42 +29,6 @@ export class PocPanel extends LitElement {
         display: flex;
         align-items: center;
         gap: 10px;
-      }
-      .presets {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        height: 32px;
-        padding: 0 6px 0 10px;
-        border-radius: var(--radius);
-        border: 1px dashed var(--warn);
-        background: rgba(18, 17, 14, 0.92);
-        color: var(--warn);
-        font-size: 12px;
-        font-weight: 600;
-      }
-      .presets > span:first-child {
-        margin-right: 4px;
-      }
-      .preset {
-        width: 24px;
-        height: 24px;
-        border-radius: var(--radius-sm);
-        color: var(--fg-2);
-        font-size: 12px;
-        font-weight: 700;
-      }
-      .preset:hover {
-        background: var(--surface-3);
-      }
-      .preset.on {
-        background: var(--warn);
-        color: #1a1208;
-      }
-      .presets .name {
-        margin-left: 6px;
-        color: var(--muted);
-        font-weight: 500;
       }
       .fab {
         border-style: dashed;
@@ -161,29 +122,8 @@ export class PocPanel extends LitElement {
         : ''}
       <div class="bar">
         <button class="btn sm fab" @click=${() => this.toggle()}>${this.open ? 'Close POC' : 'POC'}</button>
-        <div class="presets" role="radiogroup" aria-label="Header colours">
-          <span>Headers</span>
-          ${HEADER_PRESETS.map(
-            (p, i) =>
-              html`
-                <button
-                  class="preset ${this.preset === p.id ? 'on' : ''}"
-                  role="radio"
-                  aria-checked=${this.preset === p.id}
-                  title=${p.name}
-                  @click=${() => this.choose(p.id)}
-                >${i + 1}</button>
-              `,
-          )}
-          <span class="name">${HEADER_PRESETS.find((p) => p.id === this.preset)?.name}</span>
-        </div>
       </div>
     `;
-  }
-
-  private choose(id: (typeof HEADER_PRESETS)[number]['id']): void {
-    applyPreset(id);
-    this.preset = id;
   }
 
   private toggle(): void {

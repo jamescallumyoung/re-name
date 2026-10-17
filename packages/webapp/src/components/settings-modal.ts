@@ -5,7 +5,7 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { Options } from '@re-name/protocol';
 import { StoreController } from '../app/store-controller.ts';
-import { base, buttons, headColours, headerArea } from '../styles/shared.ts';
+import { base, buttons, headColours } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 import './options-form.ts';
 
@@ -24,7 +24,6 @@ export class SettingsModal extends LitElement {
     base,
     buttons,
     headColours,
-    headerArea('modal'),
     css`
       :host {
         position: fixed;
@@ -37,6 +36,9 @@ export class SettingsModal extends LitElement {
       }
       .modal {
         width: min(600px, 100%);
+        max-height: calc(100vh - 32px);
+        display: flex;
+        flex-direction: column;
         border-radius: var(--radius-lg);
         background: var(--surface-2);
         box-shadow: var(--shadow-3);
@@ -58,9 +60,16 @@ export class SettingsModal extends LitElement {
       .head > svg {
         width: 22px;
         height: 22px;
-        color: var(--h-accent);
+        color: var(--head-accent);
+      }
+      .head,
+      footer {
+        flex: none;
       }
       .body {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
         padding: 20px 24px 20px;
         display: grid;
         gap: 20px;

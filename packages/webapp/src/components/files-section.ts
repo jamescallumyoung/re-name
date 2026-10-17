@@ -7,7 +7,7 @@ import { customElement } from 'lit/decorators.js';
 import type { FileNode, FolderNode, SkipReason, TreeNode } from '@re-name/protocol';
 import { StoreController } from '../app/store-controller.ts';
 import { filesUnder, folderCheck, folderPaths, formatBytes, isSelectable } from '../lib/tree.ts';
-import { base, buttons, card, fields, headerArea, tags } from '../styles/shared.ts';
+import { base, buttons, card, fields, tags } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 
 const SKIP: Record<SkipReason, { label: string; why: string }> = {
@@ -26,7 +26,6 @@ export class FilesSection extends LitElement {
     fields,
     tags,
     card,
-    headerArea('files'),
     css`
       .selected-count {
         font-weight: 600;

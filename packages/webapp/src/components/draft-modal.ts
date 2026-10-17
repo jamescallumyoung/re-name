@@ -6,7 +6,7 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { StoreController } from '../app/store-controller.ts';
 import { type Step, stepsOf } from '../lib/draft.ts';
-import { base, buttons, headColours, headerArea, tags } from '../styles/shared.ts';
+import { base, buttons, headColours, tags } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 import './match-step.ts';
 import './poster-art.ts';
@@ -24,7 +24,6 @@ export class DraftModal extends LitElement {
     buttons,
     tags,
     headColours,
-    headerArea('modal'),
     css`
       :host {
         position: fixed;
@@ -62,7 +61,7 @@ export class DraftModal extends LitElement {
         min-width: 0;
       }
       .kind {
-        color: var(--h-accent);
+        color: var(--head-accent);
         font-size: 12px;
         font-weight: 700;
         letter-spacing: 0.06em;
@@ -78,7 +77,7 @@ export class DraftModal extends LitElement {
       }
       h1 .y,
       h1 .n {
-        color: var(--h-muted);
+        color: var(--head-muted);
         font-weight: 400;
       }
       .steps {

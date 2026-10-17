@@ -76,21 +76,20 @@ export class AppHeader extends LitElement {
         height: 40px;
         padding: 0 14px 0 16px;
         border-radius: var(--radius);
-        background: var(--surface-3);
-        color: var(--fg-2);
+        background: var(--secondary-container);
+        color: var(--on-secondary-container);
         transition: background 0.15s;
       }
       .settings:hover {
-        background: var(--surface-4);
-        color: var(--fg);
+        background: color-mix(in srgb, var(--secondary-container) 85%, var(--secondary));
       }
       .settings b {
-        color: var(--fg);
+        color: var(--on-secondary-container);
       }
       .settings .sep {
         width: 1px;
         height: 16px;
-        background: var(--line-strong);
+        background: color-mix(in srgb, var(--on-secondary-container) 30%, transparent);
       }
       .settings svg {
         width: 18px;

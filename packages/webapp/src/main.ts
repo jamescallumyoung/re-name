@@ -7,10 +7,8 @@ import { provideStore } from './app/store-controller.ts';
 import { MockServer } from './mock/server.ts';
 import './app/re-name-app.ts';
 import './poc/poc-panel.ts';
-import { applyInitialPreset } from './poc/header-presets.ts';
 import type { PocPanel } from './poc/poc-panel.ts';
 
-applyInitialPreset();
 const server = new MockServer();
 const api = new ApiClient({ fetch: server.fetch, openEvents: server.openEvents });
 const store = new Store(api, sessionStorage);
