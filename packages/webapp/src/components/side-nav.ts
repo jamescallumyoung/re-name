@@ -1,5 +1,5 @@
 // The sidebar, after Loadout's: the logo, the pages, and at the foot the connection
-// to the re-name server and the media server names are made for.
+// to the re-name server.
 
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
@@ -7,8 +7,6 @@ import { StoreController } from '../app/store-controller.ts';
 import type { Page } from '../app/store.ts';
 import { base, pills } from '../styles/shared.ts';
 import { icon, type IconName } from '../styles/icons.ts';
-
-const FLAVOUR_LABEL = { plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby' } as const;
 
 @customElement('side-nav')
 export class SideNav extends LitElement {
@@ -127,7 +125,7 @@ export class SideNav extends LitElement {
 
   override render() {
     const store = this.c.store;
-    const { session, queue, draft, options } = store;
+    const { session, queue, draft } = store;
     return html`
       <div class="brand"><span class="mark">${icon('rename')}</span><b>re-name</b></div>
       <nav aria-label="Pages">
@@ -145,9 +143,7 @@ export class SideNav extends LitElement {
           <span class="dot"></span> Connected
           ${session?.dryRun
             ? html`<span class="pill warn" title="Started with --dry-run: nothing will be moved">Dry run</span>`
-            : html`<span class="pill dim" title="Names are made for this media server">${
-              FLAVOUR_LABEL[options.flavour]
-            }</span>`}
+            : nothing}
         </div>
       </div>
     `;

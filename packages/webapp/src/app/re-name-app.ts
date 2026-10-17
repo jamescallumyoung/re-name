@@ -151,6 +151,29 @@ export class ReNameApp extends LitElement {
         font-size: 0.75rem;
         color: var(--muted);
       }
+      .settings {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 0.5rem 1.2rem;
+        margin: 0 0 1rem;
+        padding: 0.9rem 1rem;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 0.7rem;
+        font-size: 0.9rem;
+      }
+      .settings dt {
+        color: var(--muted);
+      }
+      .settings dd {
+        margin: 0;
+        color: var(--fg);
+        font-weight: 600;
+        overflow-wrap: anywhere;
+      }
+      .settings dd.mono {
+        font-weight: 500;
+      }
       .figures {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -337,14 +360,15 @@ export class ReNameApp extends LitElement {
         dry ? 'Dry-run the Queue?' : 'Apply the Queue?',
         html`
           <p>
-                      ${dry
-                        ? html`re-name was started with <span class="mono">--dry-run</span>, so nothing will be moved.`
-                        : html`<b>${files} file${
-                          files === 1 ? '' : 's'
-                        }</b> will be renamed and moved into <span class="mono">${store.session?.targetName}/</span>.`}
-                    </p>
-          <p class="muted">Every file is checked first: if anything changed on disk, nothing is moved. The apply stops at the
-                      first error, and a log is written either way.</p>
+            ${dry
+              ? html`re-name was started with <span class="mono">--dry-run</span>, so nothing will be moved.`
+              : html`<b>${files} file${files === 1 ? '' : 's'}</b> in ${store.queue.jobs.length} Job${
+                store.queue.jobs.length === 1 ? '' : 's'
+              } will be renamed and moved.`}
+          </p>
+          ${this.renderApplySettings()}
+          <p class="muted">Every file is checked first: if anything changed on disk, nothing is moved. The apply stops at
+            the first error, and a log is written either way.</p>
         `,
         dry ? 'Run' : 'Apply',
         true,
@@ -359,6 +383,22 @@ export class ReNameApp extends LitElement {
           </footer>
         </div>
       </div>
+    `;
+  }
+
+  /** The settings the apply will use, so they can be checked before anything moves. */
+  private renderApplySettings() {
+    const { options, session } = this.c.store;
+    const server = { plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby' }[options.flavour];
+    return html`
+      <dl class="settings">
+        <dt>Names for</dt>
+        <dd>${server}</dd>
+        <dt>Episode names</dt>
+        <dd>${options.includeEpisodeName ? 'Included' : 'Left out'}</dd>
+        <dt>Move into</dt>
+        <dd class="mono">${session?.targetPath}</dd>
+      </dl>
     `;
   }
 
