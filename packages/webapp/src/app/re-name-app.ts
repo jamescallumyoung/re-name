@@ -1,38 +1,35 @@
-// The app shell: one page, one column. The header, then Files, the draft Job (while
-// there is one) and the Queue, with the status bar along the bottom. Plus the
-// settings modal (up front, and from the header), the questions, the apply progress
-// and result, toasts, and the blocked and stopped screens (design doc, sections 7
-// and 8.5).
+// The app shell. Two views: the overview (Files, then the Queue) and, over it, the
+// draft Job's near-full-page modal. Plus the "Create Job" FAB, the settings modal
+// (up front, and from the header), the questions, the apply progress and result,
+// snackbars, and the blocked and stopped screens (design doc, sections 7 and 8.5).
 
-import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { StoreController } from './store-controller.ts';
-import type { Draft } from '../lib/draft.ts';
 import { base, buttons } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 import { FLAVOUR_LABEL } from '../components/app-header.ts';
 import '../components/app-header.ts';
-import '../components/draft-section.ts';
+import '../components/draft-modal.ts';
 import '../components/files-section.ts';
+import '../components/job-fab.ts';
 import '../components/queue-section.ts';
 import '../components/settings-modal.ts';
-import '../components/status-bar.ts';
 
 @customElement('re-name-app')
 export class ReNameApp extends LitElement {
   private readonly c = new StoreController(this);
-  private shownDraft: Draft | null = null;
 
   static override styles = [
     base,
     buttons,
     css`
-      /* The page never scrolls: the header and status bar stay put, and only the
-        column between them scrolls. */
+      /* The page never scrolls: the app bar stays put, and only the overview scrolls. */
       :host {
         display: flex;
         flex-direction: column;
         height: 100vh;
+        background: var(--bg);
       }
       main {
         flex: 1;
@@ -40,12 +37,12 @@ export class ReNameApp extends LitElement {
         overflow-y: auto;
       }
       .column {
-        max-width: 1100px;
+        max-width: 1120px;
         margin: 0 auto;
-        padding: 16px;
+        padding: 24px 24px 120px;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 20px;
       }
       .center {
         min-height: 100vh;
@@ -54,15 +51,16 @@ export class ReNameApp extends LitElement {
         padding: 24px;
       }
       .center .box {
-        max-width: 420px;
+        max-width: 440px;
+        border-radius: var(--radius-lg);
         border: 1px solid var(--line);
         background: var(--surface);
-        padding: 20px;
+        padding: 24px;
       }
       .center h1 {
         margin: 0 0 8px;
         color: var(--fg);
-        font-size: 15px;
+        font-size: 18px;
       }
       .center p {
         margin: 0;
@@ -74,73 +72,61 @@ export class ReNameApp extends LitElement {
         z-index: 50;
         display: grid;
         place-items: center;
-        padding: 16px;
-        background: rgba(0, 0, 0, 0.7);
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.6);
       }
       .dialog {
-        width: min(500px, 100%);
+        width: min(520px, 100%);
         max-height: 88vh;
         overflow: auto;
-        background: var(--surface);
-        border: 1px solid var(--line-strong);
-        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
-      }
-      .dialog .dhead {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        height: 44px;
-        padding: 0 14px;
-        border-bottom: 1px solid var(--line);
+        border-radius: var(--radius-lg);
         background: var(--surface-2);
+        box-shadow: var(--shadow-3);
+        padding: 24px;
+      }
+      .dialog .icon {
+        display: block;
+        margin-bottom: 12px;
+        color: var(--primary);
+      }
+      .dialog .icon svg {
+        width: 24px;
+        height: 24px;
       }
       .dialog h2 {
-        margin: 0;
+        margin: 0 0 14px;
         color: var(--fg);
-        font-size: 13px;
-        font-weight: 700;
-      }
-      .dialog .dhead svg {
-        width: 15px;
-        height: 15px;
-        color: var(--accent);
-      }
-      .dialog .body {
-        padding: 14px;
+        font-size: 20px;
+        font-weight: 600;
       }
       .dialog p {
-        margin: 0 0 10px;
+        margin: 0 0 12px;
         line-height: 1.6;
-      }
-      .dialog p:last-child {
-        margin-bottom: 0;
       }
       .dialog b {
         color: var(--fg);
       }
-      .dialog footer {
+      .dialog .buttons {
         display: flex;
         justify-content: flex-end;
         gap: 8px;
-        padding: 10px 14px;
-        border-top: 1px solid var(--line);
-        background: var(--surface-2);
+        margin-top: 20px;
       }
       .dialog ul {
-        margin: 0 0 10px;
-        padding-left: 16px;
+        margin: 0 0 12px;
+        padding-left: 18px;
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: 12px;
         color: var(--muted);
       }
       .kv {
         display: grid;
         grid-template-columns: max-content 1fr;
-        gap: 4px 14px;
-        margin: 0 0 12px;
-        padding: 10px 12px;
-        border: 1px solid var(--line);
-        background: var(--bg);
+        gap: 8px 18px;
+        margin: 0 0 14px;
+        padding: 14px 16px;
+        border-radius: var(--radius);
+        background: var(--surface-3);
       }
       .kv dt {
         color: var(--muted);
@@ -150,74 +136,74 @@ export class ReNameApp extends LitElement {
         color: var(--fg);
         overflow-wrap: anywhere;
       }
-      .kv dd.mono {
-        font-size: 12px;
-      }
       .kv dd.big {
-        font-size: 16px;
+        font-size: 18px;
         font-weight: 700;
         font-variant-numeric: tabular-nums;
       }
       .bar {
         height: 6px;
-        background: var(--bg);
-        border: 1px solid var(--line);
-        margin: 8px 0;
+        border-radius: 3px;
+        background: var(--surface-4);
+        overflow: hidden;
+        margin: 12px 0;
       }
       .bar i {
         display: block;
         height: 100%;
-        background: var(--accent);
+        background: var(--primary);
         transition: width 0.2s;
       }
       .current {
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: 12px;
         color: var(--muted);
         overflow-wrap: anywhere;
       }
       .problem {
         display: flex;
-        gap: 8px;
-        padding: 8px 10px;
-        margin-bottom: 10px;
-        border: 1px solid rgba(255, 99, 105, 0.45);
+        gap: 10px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+        border-radius: var(--radius);
         background: var(--bad-soft);
         color: var(--bad);
         overflow-wrap: anywhere;
       }
       .problem svg {
-        width: 14px;
-        height: 14px;
+        width: 18px;
+        height: 18px;
         flex: none;
-        margin-top: 2px;
       }
-      .toasts {
+      .snackbars {
         position: fixed;
-        right: 16px;
-        bottom: 60px;
+        left: 50%;
+        bottom: 28px;
+        transform: translateX(-50%);
         z-index: 55;
         display: flex;
         flex-direction: column;
-        gap: 6px;
-        max-width: 360px;
-      }
-      .toast {
-        display: flex;
         gap: 8px;
+        width: min(480px, calc(100% - 32px));
+      }
+      .snackbar {
+        display: flex;
+        gap: 10px;
         align-items: center;
-        padding: 8px 12px;
-        background: var(--surface-3);
-        border: 1px solid var(--line-strong);
-        border-left: 3px solid var(--muted);
-        color: var(--fg);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        min-height: 48px;
+        padding: 12px 16px;
+        border-radius: var(--radius);
+        background: var(--fg);
+        color: var(--bg);
+        font-weight: 500;
+        box-shadow: var(--shadow-3);
       }
-      .toast.ok {
-        border-left-color: var(--ok);
+      .snackbar svg {
+        width: 18px;
+        height: 18px;
       }
-      .toast.bad {
-        border-left-color: var(--bad);
+      .snackbar.bad {
+        background: #ffd9d6;
       }
     `,
   ];
@@ -246,33 +232,21 @@ export class ReNameApp extends LitElement {
     }
     return html`
       <app-header></app-header>
-      <main @scroll-to=${() => this.scrollToDraft()}>
+      <main>
         <div class="column">
           <files-section></files-section>
-          ${store.draft ? html`<draft-section></draft-section>` : nothing}
           <queue-section></queue-section>
         </div>
       </main>
-      <status-bar @scroll-to=${() => this.scrollToDraft()}></status-bar>
+      <job-fab></job-fab>
+      ${store.draft && store.draftOpen ? html`<draft-modal></draft-modal>` : nothing}
       ${store.setupOpen
         ? html`<settings-modal required></settings-modal>`
         : store.settingsOpen
         ? html`<settings-modal></settings-modal>`
         : nothing}
-      ${this.renderPending()} ${this.renderApply()} ${this.renderToasts()}
+      ${this.renderPending()} ${this.renderApply()} ${this.renderSnackbars()}
     `;
-  }
-
-  /** A new draft scrolls into view. */
-  protected override updated(changed: PropertyValues): void {
-    super.updated(changed);
-    const draft = this.c.store.draft;
-    if (draft && draft !== this.shownDraft) this.scrollToDraft();
-    this.shownDraft = draft;
-  }
-
-  private scrollToDraft(): void {
-    this.renderRoot.querySelector('draft-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   private renderPending() {
@@ -323,12 +297,14 @@ export class ReNameApp extends LitElement {
     return html`
       <div class="overlay" @click=${(e: Event) => e.target === e.currentTarget && store.answer(false)}>
         <div class="dialog" role="alertdialog" aria-modal="true" aria-label=${title}>
-          <div class="dhead">${icon(pending.kind === 'apply' ? 'play' : 'alert')}<h2>${title}</h2></div>
-          <div class="body">${body}</div>
-          <footer>
-            <button class="btn" @click=${() => store.answer(false)}>Cancel</button>
-            <button class="btn ${primary ? 'primary' : 'danger'}" @click=${() => store.answer(true)}>${yes}</button>
-          </footer>
+          <span class="icon">${icon(pending.kind === 'apply' ? 'play' : 'alert')}</span>
+          <h2>${title}</h2>
+          ${body}
+          <div class="buttons">
+            <button class="btn text" @click=${() => store.answer(false)}>Cancel</button>
+            <button class="btn ${primary ? 'primary' : 'text danger'}" @click=${() =>
+              store.answer(true)}>${yes}</button>
+          </div>
         </div>
       </div>
     `;
@@ -340,15 +316,14 @@ export class ReNameApp extends LitElement {
       return html`
         <div class="overlay">
           <div class="dialog" role="alertdialog" aria-modal="true">
-            <div class="dhead">${icon('alert')}<h2>Nothing was moved</h2></div>
-            <div class="body">
-              <div class="problem">${icon('alert')}<span>${store.applyError.message}</span></div>
-              ${store.applyError.details.length
-                ? html`<ul>${store.applyError.details.map((d) => html`<li>${d}</li>`)}</ul>`
-                : nothing}
-              <p>Check those files, then edit or remove the Jobs they’re in.</p>
-            </div>
-            <footer><button class="btn primary" @click=${() => store.dismissApply()}>OK</button></footer>
+            <span class="icon">${icon('alert')}</span>
+            <h2>Nothing was moved</h2>
+            <div class="problem">${icon('alert')}<span>${store.applyError.message}</span></div>
+            ${store.applyError.details.length
+              ? html`<ul>${store.applyError.details.map((d) => html`<li>${d}</li>`)}</ul>`
+              : nothing}
+            <p>Check those files, then edit or remove the Jobs they’re in.</p>
+            <div class="buttons"><button class="btn primary" @click=${() => store.dismissApply()}>OK</button></div>
           </div>
         </div>
       `;
@@ -362,14 +337,11 @@ export class ReNameApp extends LitElement {
       return html`
         <div class="overlay">
           <div class="dialog" role="dialog" aria-modal="true" aria-label="Applying the Queue">
-            <div class="dhead">${icon('play')}<h2>${store.session?.dryRun
-              ? 'Dry-running the Queue'
-              : 'Applying the Queue'}</h2></div>
-            <div class="body">
-              <p>${p ? `Moving file ${p.index + 1} of ${p.total}` : 'Checking every file against the disk…'}</p>
-              <div class="bar"><i style="width:${pct}%"></i></div>
-              ${p ? html`<div class="current">${p.newPath}</div>` : nothing}
-            </div>
+            <span class="icon">${icon('play')}</span>
+            <h2>${store.session?.dryRun ? 'Dry-running the Queue' : 'Applying the Queue'}</h2>
+            <p>${p ? `Moving file ${p.index + 1} of ${p.total}` : 'Checking every file against the disk…'}</p>
+            <div class="bar"><i style="width:${pct}%"></i></div>
+            ${p ? html`<div class="current">${p.newPath}</div>` : nothing}
           </div>
         </div>
       `;
@@ -377,45 +349,49 @@ export class ReNameApp extends LitElement {
     return html`
       <div class="overlay">
         <div class="dialog" role="alertdialog" aria-modal="true">
-          <div class="dhead">
-            ${icon(result.error ? 'alert' : 'check')}
-            <h2>${result.error
-              ? 'The apply stopped on an error'
-              : result.dryRun
-              ? 'Dry run finished'
-              : 'Queue applied'}</h2>
-          </div>
-          <div class="body">
-            <dl class="kv">
-              <dt>${result.dryRun ? 'Would move' : 'Moved'}</dt>
-              <dd class="big">${result.moved}</dd>
-              <dt>Not moved</dt>
-              <dd class="big">${result.total - result.moved}</dd>
-              <dt>Jobs left</dt>
-              <dd class="big">${result.queue.jobs.length}</dd>
-              <dt>Log</dt>
-              <dd class="mono">${result.logPath}</dd>
-            </dl>
-            ${result.error
-              ? html`
-                <div class="problem">${icon('alert')}<span><b>${result.error.path}</b><br />${result.error
-                  .message}</span></div>
-                <p>Files already moved left their Jobs. The rest are still in the Queue.</p>
-              `
-              : !result.dryRun
-              ? html`<p>Move the folders in <span class="mono">${store.session?.targetPath}</span> into your media
-                server’s library when you’re ready.</p>`
-              : nothing}
-          </div>
-          <footer><button class="btn primary" @click=${() => store.dismissApply()}>Done</button></footer>
+          <span class="icon">${icon(result.error ? 'alert' : 'check')}</span>
+          <h2>${result.error
+            ? 'The apply stopped on an error'
+            : result.dryRun
+            ? 'Dry run finished'
+            : 'Queue applied'}</h2>
+          <dl class="kv">
+            <dt>${result.dryRun ? 'Would move' : 'Moved'}</dt>
+            <dd class="big">${result.moved}</dd>
+            <dt>Not moved</dt>
+            <dd class="big">${result.total - result.moved}</dd>
+            <dt>Jobs left</dt>
+            <dd class="big">${result.queue.jobs.length}</dd>
+            <dt>Log</dt>
+            <dd class="mono">${result.logPath}</dd>
+          </dl>
+          ${result.error
+            ? html`
+              <div class="problem">${icon('alert')}<span><b>${result.error.path}</b><br />${result.error
+                .message}</span></div>
+              <p>Files already moved left their Jobs. The rest are still in the Queue.</p>
+            `
+            : !result.dryRun
+            ? html`<p>Move the folders in <span class="mono">${store.session?.targetPath}</span> into your media
+              server’s library when you’re ready.</p>`
+            : nothing}
+          <div class="buttons"><button class="btn primary" @click=${() => store.dismissApply()}>Done</button></div>
         </div>
       </div>
     `;
   }
 
-  private renderToasts() {
-    return html`<div class="toasts" role="status">
-      ${this.c.store.toasts.map((t) => html`<div class="toast ${t.tone}">${t.text}</div>`)}
+  private renderSnackbars() {
+    return html`<div class="snackbars" role="status">
+      ${
+      this.c.store.toasts.map(
+        (t) =>
+          html`<div class="snackbar ${t.tone}">${
+            t.tone === 'bad' ? icon('alert') : t.tone === 'ok' ? icon('check') : nothing
+          }
+            ${t.text}</div>`,
+      )
+    }
     </div>`;
   }
 }

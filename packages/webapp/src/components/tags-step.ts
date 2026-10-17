@@ -32,12 +32,12 @@ export class TagsStep extends LitElement {
     css`
       :host {
         display: grid;
-        gap: 16px;
+        gap: 28px;
       }
       .label {
-        margin-bottom: 6px;
+        margin-bottom: 10px;
         color: var(--muted);
-        font-size: 10.5px;
+        font-size: 12px;
         font-weight: 700;
         letter-spacing: 0.08em;
         text-transform: uppercase;
@@ -46,19 +46,21 @@ export class TagsStep extends LitElement {
         text-transform: none;
         letter-spacing: 0;
         font-weight: 400;
-        font-size: 12px;
+        font-size: 14px;
       }
       .list {
         border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
       }
       .tag-row,
       .file-row {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 90px 16px 200px 108px;
-        gap: 10px;
+        grid-template-columns: minmax(0, 1fr) 100px 18px 220px 130px;
+        gap: 14px;
         align-items: center;
-        min-height: 36px;
-        padding: 3px 10px;
+        min-height: 54px;
+        padding: 6px 16px;
         border-top: 1px solid var(--line);
       }
       .list > .item:first-child > .tag-row {
@@ -67,7 +69,7 @@ export class TagsStep extends LitElement {
       .source {
         color: var(--fg);
         font-family: var(--font-mono);
-        font-size: 12px;
+        font-size: 13.5px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -78,7 +80,7 @@ export class TagsStep extends LitElement {
       }
       .n {
         color: var(--muted);
-        font-size: 11.5px;
+        font-size: 13px;
         display: flex;
         gap: 6px;
         align-items: center;
@@ -91,11 +93,11 @@ export class TagsStep extends LitElement {
       input.value {
         width: 100%;
         font-family: var(--font-mono);
-        font-size: 12px;
+        font-size: 13.5px;
       }
       input.value.changed {
-        border-color: var(--accent-line);
-        background: var(--accent-soft);
+        border-color: var(--primary-line);
+        background: var(--primary-soft);
       }
       input.value.dropped {
         text-decoration: line-through;
@@ -114,11 +116,11 @@ export class TagsStep extends LitElement {
         display: inline-flex;
         align-items: center;
         gap: 3px;
-        height: 24px;
-        padding: 0 6px;
-        border-radius: var(--radius-sm);
+        height: 32px;
+        padding: 0 8px;
+        border-radius: var(--radius);
         color: var(--muted);
-        font-size: 11.5px;
+        font-size: 13px;
         font-weight: 600;
       }
       .per-file:hover {
@@ -133,17 +135,17 @@ export class TagsStep extends LitElement {
         transform: rotate(90deg);
       }
       .per-file .changed {
-        color: var(--accent-text);
+        color: var(--on-primary-container);
       }
       .file-row {
         background: var(--bg);
-        padding-left: 26px;
+        padding-left: 36px;
       }
       .file-row .fname {
         grid-column: 1 / 3;
         color: var(--fg-2);
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: 12.5px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -155,12 +157,12 @@ export class TagsStep extends LitElement {
         display: flex;
         align-items: center;
         gap: 6px;
-        height: 30px;
-        padding: 0 10px;
+        height: 42px;
+        padding: 0 16px;
         background: var(--surface-2);
         border-top: 1px solid var(--line);
         color: var(--muted);
-        font-size: 11.5px;
+        font-size: 13px;
         font-weight: 600;
       }
       .names .folder:first-child {
@@ -171,19 +173,19 @@ export class TagsStep extends LitElement {
         height: 13px;
       }
       .name-row {
-        padding: 6px 10px 6px 26px;
+        padding: 10px 16px 10px 36px;
         border-top: 1px solid var(--line);
       }
       .new {
         color: var(--fg);
         font-family: var(--font-mono);
-        font-size: 12px;
+        font-size: 13.5px;
         overflow-wrap: anywhere;
       }
       .old {
         color: var(--faint);
         font-family: var(--font-mono);
-        font-size: 10.5px;
+        font-size: 12px;
         overflow-wrap: anywhere;
       }
       .problem,

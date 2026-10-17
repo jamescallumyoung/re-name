@@ -1,5 +1,5 @@
-// The header: the app's name, the source folder, and a widget showing the options
-// for the whole Queue, which reopens the settings modal.
+// The top app bar: the app's name, the source folder, and a widget showing the
+// options for the whole Queue, which reopens the settings modal.
 
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
@@ -21,46 +21,50 @@ export class AppHeader extends LitElement {
         flex: none;
         display: flex;
         align-items: center;
-        gap: 16px;
-        height: 48px;
-        padding: 0 16px;
+        gap: 20px;
+        height: 64px;
+        padding: 0 24px;
         background: var(--surface);
         border-bottom: 1px solid var(--line);
       }
       .name {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         color: var(--fg);
         font-weight: 800;
-        font-size: 14px;
+        font-size: 18px;
         letter-spacing: -0.01em;
       }
-      .name svg {
-        width: 18px;
-        height: 18px;
-        color: var(--accent);
+      .mark {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius);
+        background: var(--primary);
+        color: var(--on-primary);
       }
       .source {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-width: 0;
         flex: 1;
-        padding-left: 16px;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        padding-left: 20px;
         border-left: 1px solid var(--line);
+        line-height: 1.3;
       }
       .source .label {
-        color: var(--faint);
-        font-size: 10.5px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
+        color: var(--muted);
+        font-size: 11.5px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
       }
       .source .path {
         color: var(--fg);
         font-family: var(--font-mono);
-        font-size: 12.5px;
+        font-size: 14px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -68,17 +72,16 @@ export class AppHeader extends LitElement {
       .settings {
         display: flex;
         align-items: center;
-        gap: 8px;
-        height: 30px;
-        padding: 0 10px;
-        border: 1px solid var(--line-strong);
+        gap: 10px;
+        height: 40px;
+        padding: 0 14px 0 16px;
         border-radius: var(--radius);
-        background: var(--surface-2);
+        background: var(--surface-3);
         color: var(--fg-2);
-        font-size: 12px;
+        transition: background 0.15s;
       }
       .settings:hover {
-        background: var(--surface-3);
+        background: var(--surface-4);
         color: var(--fg);
       }
       .settings b {
@@ -86,30 +89,30 @@ export class AppHeader extends LitElement {
       }
       .settings .sep {
         width: 1px;
-        height: 14px;
+        height: 16px;
         background: var(--line-strong);
       }
       .settings svg {
-        width: 14px;
-        height: 14px;
-        color: var(--muted);
+        width: 18px;
+        height: 18px;
+        color: var(--primary);
       }
       .status {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         color: var(--muted);
-        font-size: 12px;
+        font-size: 13px;
       }
       .dot {
-        width: 7px;
-        height: 7px;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
         background: var(--ok);
       }
-      @media (max-width: 760px) {
-        .source .label,
-        .status span:last-child {
+      @media (max-width: 800px) {
+        .status span:last-child,
+        .settings .ep {
           display: none;
         }
       }
@@ -119,7 +122,7 @@ export class AppHeader extends LitElement {
   override render() {
     const { session, options } = this.c.store;
     return html`
-      <span class="name">${icon('rename')} re-name</span>
+      <span class="name"><span class="mark">${icon('rename')}</span> re-name</span>
       <div class="source">
         <span class="label">Source</span>
         <span class="path" title=${session?.sourcePath ?? ''}>${session?.sourcePath ?? '…'}</span>
@@ -130,7 +133,7 @@ export class AppHeader extends LitElement {
       <button class="settings" title="Naming settings" @click=${() => this.c.store.openSettings()}>
         <b>${FLAVOUR_LABEL[options.flavour]}</b>
         <span class="sep"></span>
-        <span>Episode names ${options.includeEpisodeName ? 'on' : 'off'}</span>
+        <span class="ep">Episode names ${options.includeEpisodeName ? 'on' : 'off'}</span>
         ${icon('settings')}
       </button>
       <span class="status" title="Connected to the re-name server"><span class="dot"></span><span>Connected</span></span>

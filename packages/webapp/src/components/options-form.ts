@@ -26,7 +26,7 @@ export class OptionsForm extends LitElement {
     css`
       :host {
         display: grid;
-        gap: 18px;
+        gap: 20px;
       }
       fieldset {
         margin: 0;
@@ -37,21 +37,23 @@ export class OptionsForm extends LitElement {
         padding: 0;
         margin-bottom: 8px;
         color: var(--muted);
-        font-size: 10.5px;
+        font-size: 12px;
         font-weight: 700;
         letter-spacing: 0.08em;
         text-transform: uppercase;
       }
       .options {
-        border: 1px solid var(--line);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius);
+        overflow: hidden;
       }
       label {
         display: grid;
-        grid-template-columns: 14px 90px 1fr;
-        gap: 12px;
+        grid-template-columns: 18px 100px 1fr;
+        gap: 14px;
         align-items: center;
-        min-height: 36px;
-        padding: 0 12px;
+        min-height: 50px;
+        padding: 0 16px;
         cursor: pointer;
         border-top: 1px solid var(--line);
       }
@@ -62,7 +64,7 @@ export class OptionsForm extends LitElement {
         background: var(--surface-2);
       }
       label.on {
-        background: var(--accent-soft);
+        background: var(--primary-soft);
       }
       label b {
         color: var(--fg);
@@ -70,7 +72,7 @@ export class OptionsForm extends LitElement {
       .example {
         color: var(--muted);
         font-family: var(--font-mono);
-        font-size: 11.5px;
+        font-size: 13px;
       }
     `,
   ];

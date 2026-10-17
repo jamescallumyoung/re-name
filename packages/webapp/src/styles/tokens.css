@@ -1,36 +1,47 @@
-/* re-name's design tokens: a plain, dark utility look. Square-ish corners, hairline
-   borders, no gradients. Red is kept for actions and selection.
+/* re-name's design tokens: Material 3-style tonal surfaces on a warm dark theme, with
+   a golden primary. Corners are tighter than Material's defaults.
    Custom properties inherit through shadow roots, so every component reads these. */
 :root {
   color-scheme: dark;
-  --bg: #0e0f11;
-  --surface: #15171a;
-  --surface-2: #1b1e22;
-  --surface-3: #23272c;
-  --line: #2a2e34;
-  --line-strong: #3a3f47;
-  --fg: #e6e8eb;
-  --fg-2: #b4b9c1;
-  --muted: #8a919c;
-  --faint: #5f6670;
 
-  --accent: #e5484d;
-  --accent-strong: #ce2c31;
-  --accent-soft: rgba(229, 72, 77, 0.13);
-  --accent-line: rgba(229, 72, 77, 0.55);
-  --accent-text: #ff9592;
+  /* Surfaces, lowest to highest. */
+  --bg: #12110e;
+  --surface: #1b1914;
+  --surface-2: #23201a;
+  --surface-3: #2d2a22;
+  --surface-4: #37332a;
+  --line: #3a362c;
+  --line-strong: #4f493c;
 
-  --ok: #3dd68c;
-  --ok-soft: rgba(61, 214, 140, 0.12);
-  --warn: #ffc53d;
-  --warn-soft: rgba(255, 197, 61, 0.12);
-  /* Errors share the accent's hue, so they always carry an icon and words too. */
-  --bad: #ff6369;
-  --bad-soft: rgba(255, 99, 105, 0.12);
+  --fg: #ede7da;
+  --fg-2: #cdc6b5;
+  --muted: #9d9686;
+  --faint: #6f695c;
 
-  --radius: 3px;
-  --radius-sm: 2px;
-  --row: 30px;
+  /* Gold. */
+  --primary: #f2c14e;
+  --primary-hover: #f7cf6d;
+  --on-primary: #2a1f00;
+  --primary-container: #4a3a10;
+  --on-primary-container: #ffe4a3;
+  --primary-soft: rgba(242, 193, 78, 0.12);
+  --primary-line: rgba(242, 193, 78, 0.5);
+
+  --ok: #6fd39a;
+  --ok-soft: rgba(111, 211, 154, 0.12);
+  /* Orange, so warnings don't blur into the gold. */
+  --warn: #ff9f5a;
+  --warn-soft: rgba(255, 159, 90, 0.13);
+  --bad: #ff7a72;
+  --bad-soft: rgba(255, 122, 114, 0.13);
+
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 8px;
+  --radius-fab: 12px;
+  --row: 40px;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35), 0 1px 3px 1px rgba(0, 0, 0, 0.2);
+  --shadow-3: 0 4px 8px 3px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.4);
 
   --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;

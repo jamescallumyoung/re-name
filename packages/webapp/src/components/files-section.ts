@@ -1,14 +1,13 @@
-// The Files section (design doc, section 7.1): the source's video files as compact
-// rows, multi-select with shift-click ranges, folders that select everything inside
-// them, and queued and skipped files dimmed with a tag. It folds to its header while
-// a draft Job is open.
+// The Files card (design doc, section 7.1): the source's video files as rows,
+// multi-select with shift-click ranges, folders that select everything inside them,
+// and queued and skipped files dimmed with a chip.
 
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import type { FileNode, FolderNode, SkipReason, TreeNode } from '@re-name/protocol';
 import { StoreController } from '../app/store-controller.ts';
 import { filesUnder, folderCheck, folderPaths, formatBytes, isSelectable } from '../lib/tree.ts';
-import { base, buttons, fields, section, tags } from '../styles/shared.ts';
+import { base, buttons, card, fields, tags } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 
 const SKIP: Record<SkipReason, { label: string; why: string }> = {
@@ -26,54 +25,55 @@ export class FilesSection extends LitElement {
     buttons,
     fields,
     tags,
-    section,
+    card,
     css`
+      .selected-count {
+        color: var(--primary);
+        font-weight: 600;
+      }
       .rows {
         user-select: none;
+        padding: 6px 0;
       }
       .row {
         display: flex;
         align-items: center;
-        gap: 8px;
-        height: var(--row);
-        padding: 0 12px 0 calc(10px + var(--depth) * 20px);
-        border-bottom: 1px solid var(--line);
-        border-left: 2px solid transparent;
+        gap: 12px;
+        min-height: var(--row);
+        padding: 0 20px 0 calc(16px + var(--depth) * 24px);
         cursor: pointer;
-      }
-      .row:last-child {
-        border-bottom: none;
+        transition: background 0.1s;
       }
       .row:hover {
-        background: var(--surface-2);
+        background: rgba(237, 231, 218, 0.04);
       }
       .row.selected {
-        background: var(--accent-soft);
-        border-left-color: var(--accent);
+        background: var(--primary-soft);
       }
       .row.off {
         cursor: default;
       }
       .row.off .name,
       .row.off input {
-        opacity: 0.45;
+        opacity: 0.42;
       }
       .chev {
-        width: 14px;
-        height: 14px;
-        color: var(--faint);
+        width: 18px;
+        height: 18px;
+        color: var(--muted);
         flex: none;
+        transition: transform 0.15s;
       }
       .open .chev {
         transform: rotate(90deg);
       }
       .gap {
-        width: 14px;
+        width: 18px;
         flex: none;
       }
       .ficon {
-        width: 14px;
-        height: 14px;
+        width: 18px;
+        height: 18px;
         color: var(--muted);
         flex: none;
       }
@@ -90,59 +90,46 @@ export class FilesSection extends LitElement {
       }
       .file .name {
         font-family: var(--font-mono);
-        font-size: 12px;
+        font-size: 13px;
         color: var(--fg-2);
       }
       .row.selected .name {
         color: var(--fg);
       }
       .size {
-        width: 64px;
+        width: 72px;
         text-align: right;
         color: var(--faint);
-        font-size: 11.5px;
+        font-size: 13px;
         font-variant-numeric: tabular-nums;
         flex: none;
-      }
-      .folded {
-        color: var(--muted);
-        font-size: 12px;
       }
     `,
   ];
 
   override render() {
     const store = this.c.store;
-    const { tree, selection, expanded, filesFolded, draft } = store;
+    const { tree, selection, expanded } = store;
     const files = tree ? filesUnder(tree) : [];
     const available = files.filter(isSelectable).length;
     const allOpen = tree ? folderPaths(tree).slice(1).every((p) => expanded.has(p)) : false;
-    const folded = filesFolded && draft !== null;
+    const bytes = files.filter((f) => selection.has(f.path)).reduce((n, f) => n + f.size, 0);
     return html`
       <div class="head">
         <h2>Files</h2>
-        <span class="count">${available} of ${files.length} video files available</span>
+        ${selection.size
+          ? html`<span class="selected-count">${selection.size} selected · ${formatBytes(bytes)}</span>`
+          : html`<span class="count">${available} of ${files.length} video files available</span>`}
         <span class="grow"></span>
-        ${folded
-          ? html`
-            <span class="folded">Folded while you edit the draft Job</span>
-            <button class="btn sm" @click=${() => store.setFilesFolded(false)}>Show files</button>
-          `
-          : html`
-            <button class="btn sm ghost" @click=${() =>
-              store.selectAll()} ?disabled=${available === 0}>Select all</button>
-            <button class="btn sm ghost" @click=${() => store.clearSelection()} ?disabled=${selection.size === 0}>
-              Clear
-            </button>
-            <button class="btn sm ghost" @click=${() => store.setAllExpanded(!allOpen)}>
-              ${allOpen ? 'Collapse all' : 'Expand all'}
-            </button>
-            ${draft ? html`<button class="btn sm" @click=${() => store.setFilesFolded(true)}>Fold</button>` : nothing}
-          `}
+        <button class="btn sm text" @click=${() => store.selectAll()} ?disabled=${available === 0}>Select all</button>
+        <button class="btn sm text" @click=${() => store.clearSelection()} ?disabled=${selection.size === 0}>
+          Clear
+        </button>
+        <button class="btn sm text" @click=${() => store.setAllExpanded(!allOpen)}>
+          ${allOpen ? 'Collapse all' : 'Expand all'}
+        </button>
       </div>
-      ${folded
-        ? nothing
-        : !tree
+      ${!tree
         ? html`<div class="empty">Reading the source…</div>`
         : files.length === 0
         ? html`<div class="empty">No video files are left in the source.</div>`

@@ -21,12 +21,12 @@ export class MatchStep extends LitElement {
     css`
       :host {
         display: grid;
-        gap: 16px;
+        gap: 28px;
       }
       .label {
-        margin-bottom: 6px;
+        margin-bottom: 10px;
         color: var(--muted);
-        font-size: 10.5px;
+        font-size: 12px;
         font-weight: 700;
         letter-spacing: 0.08em;
         text-transform: uppercase;
@@ -36,19 +36,21 @@ export class MatchStep extends LitElement {
         text-transform: none;
         letter-spacing: 0;
         font-weight: 600;
-        font-size: 12px;
+        font-size: 14px;
       }
       .list {
         border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
       }
       .match {
         display: grid;
-        grid-template-columns: 14px 28px minmax(0, 1fr) 60px 90px;
-        gap: 12px;
+        grid-template-columns: 18px 36px minmax(0, 1fr) 70px 100px;
+        gap: 16px;
         align-items: center;
         width: 100%;
-        min-height: 52px;
-        padding: 5px 10px;
+        min-height: 68px;
+        padding: 8px 16px;
         border-top: 1px solid var(--line);
         text-align: left;
         cursor: pointer;
@@ -60,14 +62,18 @@ export class MatchStep extends LitElement {
         background: var(--surface-2);
       }
       .match.on {
-        background: var(--accent-soft);
+        background: var(--primary-soft);
+      }
+      .match .tag {
+        justify-self: start;
       }
       .match poster-art {
-        width: 28px;
+        width: 36px;
       }
       .match .t {
         color: var(--fg);
         font-weight: 600;
+        font-size: 15px;
       }
       .match .y {
         color: var(--muted);
@@ -76,17 +82,18 @@ export class MatchStep extends LitElement {
       .match .id {
         color: var(--faint);
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: 12px;
         text-align: right;
       }
       .loading {
-        padding: 14px 10px;
+        padding: 20px 16px;
         color: var(--muted);
       }
       form {
         display: flex;
-        gap: 6px;
-        margin-bottom: 8px;
+        gap: 8px;
+        margin-bottom: 12px;
+        max-width: 640px;
       }
       form input {
         flex: 1;

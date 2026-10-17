@@ -22,17 +22,19 @@ export class SeasonsStep extends LitElement {
     css`
       :host {
         display: grid;
-        gap: 12px;
+        gap: 20px;
       }
       .group {
         border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
       }
       .ghead {
         display: flex;
         align-items: center;
         gap: 8px;
-        height: 36px;
-        padding: 0 10px;
+        min-height: 52px;
+        padding: 6px 16px;
         background: var(--surface-2);
         border-bottom: 1px solid var(--line);
       }
@@ -51,25 +53,25 @@ export class SeasonsStep extends LitElement {
         white-space: nowrap;
       }
       .ghead .folder svg {
-        width: 14px;
-        height: 14px;
+        width: 18px;
+        height: 18px;
         color: var(--muted);
         flex: none;
       }
       .ghead label {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         color: var(--muted);
-        font-size: 12px;
+        font-size: 13px;
       }
       .row {
         display: grid;
-        grid-template-columns: 64px minmax(0, 1fr) 120px 64px minmax(0, 1fr);
-        gap: 10px;
+        grid-template-columns: 72px minmax(0, 1fr) 140px 76px minmax(0, 1fr);
+        gap: 14px;
         align-items: center;
-        min-height: 36px;
-        padding: 3px 10px;
+        min-height: 54px;
+        padding: 6px 16px;
         border-top: 1px solid var(--line);
       }
       .ghead + .row {
@@ -83,7 +85,7 @@ export class SeasonsStep extends LitElement {
       .name {
         color: var(--faint);
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: 12px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;

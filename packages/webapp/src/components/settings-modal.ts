@@ -31,39 +31,38 @@ export class SettingsModal extends LitElement {
         display: grid;
         place-items: center;
         padding: 16px;
-        background: rgba(0, 0, 0, 0.7);
+        background: rgba(0, 0, 0, 0.6);
       }
       .modal {
-        width: min(560px, 100%);
-        background: var(--surface);
-        border: 1px solid var(--line-strong);
-        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+        width: min(600px, 100%);
+        border-radius: var(--radius-lg);
+        background: var(--surface-2);
+        box-shadow: var(--shadow-3);
+        overflow: hidden;
       }
       .head {
         display: flex;
         align-items: center;
         gap: 10px;
-        height: 44px;
-        padding: 0 14px;
-        border-bottom: 1px solid var(--line);
-        background: var(--surface-2);
+        height: 64px;
+        padding: 0 16px 0 24px;
       }
       .head h1 {
         margin: 0;
         flex: 1;
         color: var(--fg);
-        font-size: 13px;
-        font-weight: 700;
+        font-size: 20px;
+        font-weight: 600;
       }
       .head svg {
-        width: 16px;
-        height: 16px;
-        color: var(--accent);
+        width: 22px;
+        height: 22px;
+        color: var(--primary);
       }
       .body {
-        padding: 16px 14px 18px;
+        padding: 4px 24px 20px;
         display: grid;
-        gap: 16px;
+        gap: 20px;
       }
       .intro {
         margin: 0;
@@ -72,8 +71,10 @@ export class SettingsModal extends LitElement {
       .paths {
         display: grid;
         grid-template-columns: max-content 1fr;
-        gap: 4px 12px;
-        font-size: 12px;
+        gap: 6px 16px;
+        padding: 12px 14px;
+        border-radius: var(--radius);
+        background: var(--surface-3);
       }
       .paths dt {
         color: var(--muted);
@@ -86,15 +87,13 @@ export class SettingsModal extends LitElement {
       }
       .note {
         color: var(--muted);
-        font-size: 12px;
+        font-size: 13px;
       }
       footer {
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 10px 14px;
-        border-top: 1px solid var(--line);
-        background: var(--surface-2);
+        padding: 16px 24px 20px;
       }
       footer .note {
         flex: 1;
@@ -141,7 +140,7 @@ export class SettingsModal extends LitElement {
               ? `Changing these renames the files of all ${jobs} queued Job${jobs === 1 ? '' : 's'}.`
               : 'These apply to every Job in the Queue.'}
           </span>
-          ${this.required ? nothing : html`<button class="btn" @click=${() => this.close()}>Cancel</button>`}
+          ${this.required ? nothing : html`<button class="btn text" @click=${() => this.close()}>Cancel</button>`}
           <button class="btn primary" ?disabled=${this.saving} @click=${() => this.save(choice)}>
             ${this.required ? 'Continue' : 'Save'}
           </button>

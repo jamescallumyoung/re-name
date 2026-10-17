@@ -21,8 +21,8 @@ export class PocPanel extends LitElement {
     css`
       :host {
         position: fixed;
-        left: 12px;
-        bottom: 60px;
+        left: 20px;
+        bottom: 28px;
         z-index: 70;
       }
       .fab {

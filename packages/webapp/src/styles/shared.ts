@@ -1,4 +1,5 @@
-// Shared component styles: a plain utility look. Colours and fonts come from tokens.css.
+// Shared component styles, loosely after Material 3: tonal surfaces, filled and tonal
+// buttons, state layers on hover. Colours and fonts come from tokens.css.
 
 import { css } from 'lit';
 
@@ -7,7 +8,8 @@ export const base = css`
   :host {
     box-sizing: border-box;
     font-family: var(--font-ui);
-    font-size: 13px;
+    font-size: 14px;
+    line-height: 1.45;
     color: var(--fg-2);
   }
   *,
@@ -24,97 +26,109 @@ export const base = css`
     cursor: pointer;
   }
   :focus-visible {
-    outline: 1px solid var(--accent);
-    outline-offset: 1px;
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
   }
   svg.i {
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
     flex: none;
   }
   .mono {
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 0.9em;
   }
   .muted {
     color: var(--muted);
-  }
-  .num {
-    font-variant-numeric: tabular-nums;
   }
 `;
 
 export const buttons = css`
   .btn {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    height: 28px;
-    padding: 0 10px;
+    gap: 8px;
+    height: 36px;
+    padding: 0 16px;
     border-radius: var(--radius);
     border: 1px solid var(--line-strong);
-    background: var(--surface-2);
+    background: transparent;
     color: var(--fg);
     font-weight: 600;
-    font-size: 12px;
+    font-size: 13.5px;
+    letter-spacing: 0.01em;
     white-space: nowrap;
+    transition:
+      background 0.15s,
+      box-shadow 0.15s;
   }
   .btn:hover:not(:disabled) {
-    background: var(--surface-3);
+    background: rgba(237, 231, 218, 0.06);
   }
+  /* Filled: the one main action. */
   .btn.primary {
-    background: var(--accent-strong);
-    border-color: var(--accent);
-    color: #fff;
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--on-primary);
   }
   .btn.primary:hover:not(:disabled) {
-    background: var(--accent);
+    background: var(--primary-hover);
+    box-shadow: var(--shadow-1);
+  }
+  /* Tonal: secondary actions. */
+  .btn.tonal {
+    background: var(--primary-container);
+    border-color: transparent;
+    color: var(--on-primary-container);
+  }
+  .btn.tonal:hover:not(:disabled) {
+    background: #574416;
+  }
+  .btn.text {
+    border-color: transparent;
+    color: var(--primary);
+    padding: 0 12px;
+  }
+  .btn.text:hover:not(:disabled) {
+    background: var(--primary-soft);
   }
   .btn.danger {
     color: var(--bad);
   }
-  .btn.ghost {
-    background: none;
-    border-color: transparent;
-    color: var(--muted);
-  }
-  .btn.ghost:hover:not(:disabled) {
-    color: var(--fg);
-    background: var(--surface-2);
-  }
   .btn.sm {
-    height: 24px;
-    padding: 0 8px;
-    font-size: 11.5px;
+    height: 32px;
+    padding: 0 12px;
+    font-size: 13px;
   }
   .btn:disabled {
-    opacity: 0.4;
+    opacity: 0.38;
     cursor: not-allowed;
   }
   .btn svg {
-    width: 13px;
-    height: 13px;
+    width: 16px;
+    height: 16px;
   }
   .icon-btn {
     display: inline-grid;
     place-items: center;
-    width: 24px;
-    height: 24px;
-    border-radius: var(--radius-sm);
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius);
     color: var(--muted);
   }
   .icon-btn:hover:not(:disabled) {
     color: var(--fg);
-    background: var(--surface-3);
+    background: rgba(237, 231, 218, 0.08);
   }
   .icon-btn:disabled {
     opacity: 0.3;
     cursor: default;
   }
   .icon-btn svg {
-    width: 13px;
-    height: 13px;
+    width: 17px;
+    height: 17px;
   }
 `;
 
@@ -124,25 +138,30 @@ export const fields = css`
   input[type='number'],
   select {
     font: inherit;
-    font-size: 12.5px;
-    height: 28px;
+    font-size: 14px;
+    height: 38px;
     color: var(--fg);
-    background: var(--bg);
+    background: var(--surface-2);
     border: 1px solid var(--line-strong);
     border-radius: var(--radius);
-    padding: 0 8px;
+    padding: 0 10px;
     min-width: 0;
+  }
+  input:hover,
+  select:hover {
+    border-color: var(--muted);
   }
   input:focus,
   select:focus {
-    border-color: var(--accent);
+    border-color: var(--primary);
+    box-shadow: inset 0 0 0 1px var(--primary);
     outline: none;
   }
   input[type='checkbox'],
   input[type='radio'] {
-    accent-color: var(--accent);
-    width: 14px;
-    height: 14px;
+    accent-color: var(--primary);
+    width: 17px;
+    height: 17px;
     margin: 0;
     cursor: pointer;
   }
@@ -151,46 +170,39 @@ export const fields = css`
   }
 `;
 
-/** Small square badges. */
+/** Small chips. */
 export const tags = css`
   .tag {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    height: 18px;
-    padding: 0 5px;
+    gap: 5px;
+    height: 24px;
+    padding: 0 8px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--line-strong);
     color: var(--fg-2);
-    font-size: 10.5px;
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.02em;
     white-space: nowrap;
-    text-transform: uppercase;
   }
   .tag svg {
-    width: 11px;
-    height: 11px;
+    width: 13px;
+    height: 13px;
   }
-  .tag.accent {
-    border-color: var(--accent-line);
-    color: var(--accent-text);
-    background: var(--accent-soft);
+  .tag.primary {
+    border-color: transparent;
+    background: var(--primary-container);
+    color: var(--on-primary-container);
   }
   .tag.warn {
-    border-color: rgba(255, 197, 61, 0.45);
-    color: var(--warn);
+    border-color: transparent;
     background: var(--warn-soft);
+    color: var(--warn);
   }
   .tag.bad {
-    border-color: rgba(255, 99, 105, 0.45);
-    color: var(--bad);
+    border-color: transparent;
     background: var(--bad-soft);
-  }
-  .tag.ok {
-    border-color: rgba(61, 214, 140, 0.4);
-    color: var(--ok);
-    background: var(--ok-soft);
+    color: var(--bad);
   }
   .tag.dim {
     border-color: var(--line);
@@ -198,39 +210,38 @@ export const tags = css`
   }
 `;
 
-/** A section of the page: a header bar with a label, then its body. */
-export const section = css`
+/** A card on the overview: a title row, then its body. */
+export const card = css`
   :host {
     display: block;
-    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
     background: var(--surface);
+    border: 1px solid var(--line);
+    overflow: hidden;
   }
   .head {
     display: flex;
     align-items: center;
-    gap: 10px;
-    min-height: 40px;
-    padding: 0 12px;
+    gap: 12px;
+    min-height: 60px;
+    padding: 10px 16px 10px 20px;
     border-bottom: 1px solid var(--line);
-    background: var(--surface-2);
+    flex-wrap: wrap;
   }
   .head h2 {
     margin: 0;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
     color: var(--fg);
+    font-size: 17px;
+    font-weight: 700;
   }
   .head .count {
     color: var(--muted);
-    font-size: 12px;
   }
   .head .grow {
     flex: 1;
   }
   .empty {
-    padding: 28px 16px;
+    padding: 40px 20px;
     color: var(--muted);
     text-align: center;
     line-height: 1.6;

@@ -51,8 +51,8 @@ export class Store extends EventTarget {
 
   /** The settings modal, reopened from the header (view state). */
   settingsOpen = false;
-  /** The Files section, folded away while a draft is open (view state). */
-  filesFolded = false;
+  /** Whether the draft Job's modal is showing; minimising it keeps the draft (view state). */
+  draftOpen = false;
   selection = new Set<string>();
   private anchor: string | null = null;
   expanded = new Set<string>();
@@ -194,8 +194,14 @@ export class Store extends EventTarget {
     this.emit();
   }
 
-  setFilesFolded(folded: boolean): void {
-    this.filesFolded = folded;
+  /** Hides the draft Job's modal without discarding the draft. */
+  minimiseDraft(): void {
+    this.draftOpen = false;
+    this.emit();
+  }
+
+  resumeDraft(): void {
+    if (this.draft) this.draftOpen = true;
     this.emit();
   }
 
@@ -312,7 +318,7 @@ export class Store extends EventTarget {
       );
       const draft = newDraft(files);
       this.draft = draft;
-      this.filesFolded = true;
+      this.draftOpen = true;
       if (job) {
         // Fill in what the approved Job chose, so only small changes are needed.
         draft.editingJobId = job.id;
@@ -357,7 +363,7 @@ export class Store extends EventTarget {
     switch (pending.kind) {
       case 'discard-draft':
         this.draft = null;
-        this.filesFolded = false;
+        this.draftOpen = false;
         if (pending.then === 'new-job') await this.newJob();
         else if (pending.then !== 'close') await this.editJob(pending.then.editJobId);
         break;
@@ -567,7 +573,7 @@ export class Store extends EventTarget {
           : this.api.call('queue.addJob', { draft: job })
       );
       this.draft = null;
-      this.filesFolded = false;
+      this.draftOpen = false;
       this.toast(editing ? 'The Job was updated.' : 'The Job was added to the Queue.', 'ok');
       await this.loadTree();
     } catch (error) {

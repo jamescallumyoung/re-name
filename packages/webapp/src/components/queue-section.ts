@@ -1,11 +1,11 @@
-// The Queue section (design doc, sections 7.1 and 11): one row per approved Job,
+// The Queue card (design doc, sections 7.1 and 11): one row per approved Job,
 // opening to its tree of changes, and Apply, which applies the whole Queue.
 
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import type { Job, PreviewFile } from '@re-name/protocol';
 import { StoreController } from '../app/store-controller.ts';
-import { base, buttons, section, tags } from '../styles/shared.ts';
+import { base, buttons, card, tags } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 import { renderNewName } from './new-name.ts';
 import './poster-art.ts';
@@ -42,43 +42,48 @@ export class QueueSection extends LitElement {
     base,
     buttons,
     tags,
-    section,
+    card,
     css`
-      .job {
-        border-bottom: 1px solid var(--line);
+      .target {
+        color: var(--muted);
+        font-family: var(--font-mono);
+        font-size: 13px;
       }
-      .job:last-child {
-        border-bottom: none;
+      .job + .job {
+        border-top: 1px solid var(--line);
       }
       .job.editing {
-        box-shadow: inset 2px 0 0 var(--warn);
+        box-shadow: inset 3px 0 0 var(--warn);
       }
       .row {
         display: grid;
-        grid-template-columns: 14px 24px minmax(0, 1fr) auto auto;
-        gap: 10px;
+        grid-template-columns: 18px 32px minmax(0, 1fr) auto auto;
+        gap: 14px;
         align-items: center;
-        min-height: 44px;
-        padding: 4px 12px;
+        min-height: 64px;
+        padding: 8px 16px 8px 20px;
         cursor: pointer;
+        transition: background 0.1s;
       }
       .row:hover {
-        background: var(--surface-2);
+        background: rgba(237, 231, 218, 0.04);
       }
       .chev {
-        width: 14px;
-        height: 14px;
-        color: var(--faint);
+        width: 18px;
+        height: 18px;
+        color: var(--muted);
+        transition: transform 0.15s;
       }
       .open .chev {
         transform: rotate(90deg);
       }
       .row poster-art {
-        width: 24px;
+        width: 32px;
       }
       .title {
         color: var(--fg);
         font-weight: 600;
+        font-size: 15px;
       }
       .title .y {
         color: var(--muted);
@@ -86,7 +91,7 @@ export class QueueSection extends LitElement {
       }
       .meta {
         display: flex;
-        gap: 4px;
+        gap: 6px;
         align-items: center;
       }
       .actions {
@@ -94,32 +99,32 @@ export class QueueSection extends LitElement {
         gap: 2px;
       }
       .changes {
-        padding: 8px 12px 10px 48px;
+        padding: 12px 20px 16px 84px;
         background: var(--bg);
         border-top: 1px solid var(--line);
         font-family: var(--font-mono);
-        font-size: 12px;
-        line-height: 1.55;
+        font-size: 13px;
+        line-height: 1.6;
       }
       .tf {
         color: var(--fg);
         font-weight: 600;
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 6px;
       }
       .tf svg {
-        width: 13px;
-        height: 13px;
+        width: 15px;
+        height: 15px;
         color: var(--muted);
       }
       .nested {
-        margin-left: 6px;
-        padding-left: 14px;
+        margin-left: 7px;
+        padding-left: 16px;
         border-left: 1px solid var(--line-strong);
       }
       .file {
-        padding: 2px 0;
+        padding: 4px 0;
       }
       .new {
         color: var(--fg-2);
@@ -127,17 +132,18 @@ export class QueueSection extends LitElement {
       }
       .old {
         color: var(--faint);
-        font-size: 10.5px;
+        font-size: 11.5px;
         overflow-wrap: anywhere;
       }
       .warning {
         color: var(--warn);
-        font-size: 11px;
+        font-size: 12px;
       }
       .dup {
         color: var(--warn);
         background: var(--warn-soft);
-        padding: 0 2px;
+        border-radius: 3px;
+        padding: 0 3px;
         font-weight: 700;
       }
     `,
@@ -152,16 +158,17 @@ export class QueueSection extends LitElement {
         <h2>Queue</h2>
         <span class="count">${queue.jobs.length} Job${queue.jobs.length === 1 ? '' : 's'} · ${files} file${files === 1
           ? ''
-          : 's'} → <span class="mono">${session?.targetPath}</span></span>
+          : 's'}</span>
         <span class="grow"></span>
-        <button class="btn sm primary" ?disabled=${queue.jobs.length === 0 || apply !== null} @click=${() =>
+        <span class="target" title="Files are moved here">→ ${session?.targetPath}</span>
+        <button class="btn primary" ?disabled=${queue.jobs.length === 0 || apply !== null} @click=${() =>
           store.askApply()}>
           ${icon('play')} ${session?.dryRun ? 'Dry-run Queue' : 'Apply Queue'}
         </button>
       </div>
       ${queue.jobs.length === 0
         ? html`<div class="empty">
-          <b>The Queue is empty.</b><br />Select the files of one movie or show above, then start a Job.
+          <b>The Queue is empty.</b><br />Select the files of one movie or show, then create a Job.
         </div>`
         : queue.jobs.map((j) => this.renderJob(j))}
     `;
@@ -183,7 +190,11 @@ export class QueueSection extends LitElement {
           <span class="meta">
             <span class="tag">${job.match.type === 'tv' ? 'TV' : 'Movie'}</span>
             <span class="tag">${job.draft.files.length} file${job.draft.files.length === 1 ? '' : 's'}</span>
-            ${dups ? html`<span class="tag warn" title="Clashing names get a DUP tag">${dups} DUP</span>` : nothing}
+            ${dups
+              ? html`<span class="tag warn" title="Clashing names get a DUP tag">${dups} duplicate${
+                dups === 1 ? '' : 's'
+              }</span>`
+              : nothing}
             ${warnings ? html`<span class="tag warn">${icon('alert')} ${warnings}</span>` : nothing}
             ${editing ? html`<span class="tag warn">Editing</span>` : nothing}
           </span>

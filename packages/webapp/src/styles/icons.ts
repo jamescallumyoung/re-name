@@ -25,6 +25,8 @@ const PATHS = {
   play: '<path d="M7 5v14l11-7Z"/>',
   flask: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/>',
   tag: '<path d="M3 12V4h8l10 10-8 8Z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  minimise: '<path d="M5 19h14"/>',
   skip: '<circle cx="12" cy="12" r="9"/><path d="m6 6 12 12"/>',
 } as const;
 

@@ -18,19 +18,19 @@ check).
 
 ## What to try
 
-It's one page in one column: **Files**, then the **Draft Job** while there is one, then the **Queue**, with a status bar
-along the bottom.
+There are two views: the **overview** (Files, then the Queue) and the **draft Job**, a near-full-page modal over it.
 
 1. **Choose the options** in the modal that opens first: the media server (Plex, Jellyfin, Emby) and episode names. The
-   widget in the header reopens it.
+   widget in the top app bar reopens it.
 2. **Select files**: click, shift-click a range, or tick a folder. Samples, multi-episode files and split parts are
-   dimmed with a tag.
-3. **New Job** (in the status bar). Files fold to one line, and the draft opens below them: pick a TMDB match (or
-   search), check the seasons for TV, then the tags. Names come from the (mock) server.
+   dimmed with a chip.
+3. **Create Job**, the button at the bottom right, opens the draft: pick a TMDB match (or search), check the seasons for
+   TV, then the tags. Names come from the (mock) server. **Minimise** (or Escape) hides the draft and keeps it; the
+   button then says **Resume draft**.
 4. **Add to Queue**. The Job's files are dimmed and tagged with its title, and the Queue lists it; open a Job to see its
    tree of changes. Try queuing _Blade Runner 2049_: a file with that name is already in `processed/`, so it gets a
    `DUP-1` tag.
-5. **Edit** or remove a Job, or change the options from the header, and watch the names change.
+5. **Edit** or remove a Job, or change the options from the app bar, and watch the names change.
 6. **Apply Queue**: the confirm dialog lists the settings it will use, then shows progress and a result.
 
 **POC controls**, at the bottom left, drive the mock server: latency, a failing apply, files changed on disk,
@@ -40,9 +40,9 @@ available.
 
 ## How it's built
 
-A plain, dark utility look: square corners, hairline borders, compact rows, a red accent. The same stack as the real
-webapp will use: Lit 3 web components with standard decorators, TypeScript, esbuild (through Deno), `deno test`,
-`deno lint` and `deno fmt`.
+Loosely Material 3 (tonal surfaces, filled and tonal buttons, an extended FAB), with tighter corners and a golden
+primary colour. The same stack as the real webapp will use: Lit 3 web components with standard decorators, TypeScript,
+esbuild (through Deno), `deno test`, `deno lint` and `deno fmt`.
 
 - `../protocol/`: the `Rpc` contract and shared types, as the server will use them.
 - `src/api/client.ts`: the real RPC client (`POST /rpc/<command>`, HTTP statuses, the Queue's `ETag` and `If-Match`),
