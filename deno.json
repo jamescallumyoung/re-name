@@ -1,0 +1,14 @@
+{
+  // re-name: a Deno workspace. See docs/design-doc.md.
+  "workspace": ["packages/protocol", "packages/webapp"],
+  "nodeModulesDir": "auto",
+  "fmt": {
+    "lineWidth": 120,
+    "singleQuote": true,
+    // The docs are formatted by hand.
+    "exclude": ["**/dist/", "docs/"]
+  },
+  "lint": {
+    "exclude": ["**/dist/"]
+  }
+}
