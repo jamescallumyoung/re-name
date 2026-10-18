@@ -1,6 +1,6 @@
 {
   // re-name: a Deno workspace. See docs/design-doc.md.
-  "workspace": ["packages/protocol", "packages/webapp"],
+  "workspace": ["packages/protocol", "packages/server", "packages/webapp"],
   "nodeModulesDir": "auto",
   "fmt": {
     "lineWidth": 120,

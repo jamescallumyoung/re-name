@@ -1,0 +1,21 @@
+{
+  "name": "@re-name/server",
+  "version": "0.1.0",
+  "exports": "./main.ts",
+  "imports": {
+    "@std/path": "jsr:@std/path@^1.1.0",
+    "@std/testing": "jsr:@std/testing@^1.0.0",
+    "@std/expect": "jsr:@std/expect@^1.0.0"
+  },
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "tasks": {
+    "check": "deno check src && deno lint && deno fmt --check",
+    "test": "deno test --allow-read --allow-write --allow-env --allow-net --allow-run --allow-sys src"
+  }
+}
