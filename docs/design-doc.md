@@ -1,10 +1,10 @@
 # re-name: design document
 
-**Status:** implementation in progress (2026-10-18). The design was agreed on 2026-10-17, refined by a clickable UI proof of concept (POC v4.5, branch `feature/webapp-ui-poc`), and its last open items were decided for the implementation plan on 2026-10-18. The server's behaviour is specified, as numbered statements that the tests cite, in [`server-spec.md`](server-spec.md). Items marked **Open** are not decided. Everything else is.
+**Status:** implemented (2026-10-18, branch `feature/post-poc`), awaiting review and the manual checks in [`manual-checks.md`](manual-checks.md) before a first release. The design was agreed on 2026-10-17, refined by a clickable UI proof of concept (POC v4.5, branch `feature/webapp-ui-poc`), and its last open items were decided for the implementation plan on 2026-10-18. The server's behaviour is specified, as numbered statements that the tests cite, in [`server-spec.md`](server-spec.md). Items marked **Open** are not decided. Everything else is.
 
 re-name renames and reorganises movie and TV episode files so that Plex, Jellyfin and Emby can identify them. Files are matched to The Movie Database (TMDB). You run it from a terminal and use it in your browser: a local server does the file work, and a web page provides the interface.
 
-This document is for the project's owner and for anyone, human or agent, continuing the work. It records what was decided and why. The feature, component and library docs (with numbered statements for tests to cite) will be written from it.
+This document is for the project's owner and for anyone, human or agent, continuing the work. It records what was decided and why. The server's behaviour is detailed in `server-spec.md`; the webapp's is covered here and in its README.
 
 ---
 
@@ -53,14 +53,16 @@ A throwaway trial, outside the repo, confirmed:
 - **A compiled binary serves its embedded webapp.** Files embedded with `--include` are read with `Deno.readFile(join(import.meta.dirname, …))`; inside the binary, `import.meta.dirname` points into an embedded virtual folder.
 - **`.env` loads at run time** with either `process.loadEnvFile(path)` or `@std/dotenv` `load({ envPath, export: true })`, including in the compiled binary.
 - **`deno compile --env-file` embeds the variables in the binary when building.** It must **never** be used, or secrets would ship in releases.
-- **Cross-compiling from macOS arm64** to Windows x64, Linux x64 and arm64, and macOS x64 all succeeded. Sizes are about 68 to 105 MB, or 29 to 34 MB gzipped. The Linux and Windows builds were not run.
+- **Cross-compiling from macOS arm64** to Windows x64, Linux x64 and arm64, and macOS x64 all succeeded. Sizes are about 68 to 105 MB, or 29 to 34 MB gzipped. The Linux and Windows builds were not run. (Confirmed again with re-name itself on 2026-10-18: `deno task compile` built all five, and the macOS arm64 build ran from another folder, served the webapp, and made the early exits.)
+- **`--allow-run` with a command that isn't on the machine** prints an "Info: Failed to resolve" line on every run, so each build allows only its own browser opener (`open`, `xdg-open` or `cmd`).
 - **`Deno.rename` renames directories.**
 - **Disconnect detection:** when a client drops, the server notices within about 1 ms, through an SSE stream's `cancel` or a WebSocket's `close`. Don't use `request.signal` on streamed responses: Deno warns that its behaviour there is deprecated.
 
 ## 3. Repository and packages
 
 - A Deno workspace with **at least a `server` package and a `webapp` package**, so the webapp's internals stay separate from the server's. Shared packages are added as needed, for example `protocol`, which holds the `Rpc` contract and shared types.
-  - **So far:** `packages/protocol` (the contract) and `packages/webapp` (the UI POC, with its mock server in `src/mock/` and its POC controls in `src/poc/`). The webapp's README describes what to try.
+  - **The packages:** `packages/protocol` (the contract), `packages/server` (the CLI and server, with the naming and parsing in `src/naming/`, which only the server runs) and `packages/webapp` (the UI). `scripts/compile.ts` builds the binaries. The root `deno.json` has the tasks `check`, `test`, `build`, `dev`, `start` and `compile`, which call each package's own task by name: `deno task -r` would also re-run the root's tasks, recursing.
+  - The server's tests run against real temporary folders and a stub TMDB server (`src/__tests__/stub-tmdb.ts`). `e2e.test.ts` starts `main.ts` as its own process, pointed at the stub through `RENAME_TMDB_BASE_URL` (read only when set, for tests), and drives a whole run over HTTP for each flavour.
   - The webapp keeps its pure logic in `src/lib/` (tested with `deno test`), its single store in `src/app/store.ts`, and its views in `src/components/`, as in Loadout.
   - **esbuild doesn't know about Deno workspace members,** so the webapp's build maps `@re-name/protocol` to its source with esbuild's `alias` option. Lit and esbuild come from `node_modules` (`"nodeModulesDir": "auto"` in the root `deno.json`).
   - `deno fmt` excludes `docs/`, which is formatted by hand.
@@ -269,7 +271,7 @@ Settled through the POC:
 
   Both stop while the banner is disabled and under the system's reduced-motion setting. The label's contrast never drops below 9.7:1: the sweep is a light band, so it only raises it.
 - **The page itself never scrolls.** The app bar stays put, and only the overview's column scrolls.
-- **Accessibility** (from the POC's audit): every modal and dialog traps focus while open, moves focus into itself when it opens, returns focus to what opened it when it closes, and closes on Escape when it can be dismissed. The file tree follows the WAI-ARIA tree view pattern: Up and Down move between rows, Right and Left expand and collapse folders, Space selects, Shift with Up or Down extends the selection, and Home and End jump to the first and last row.
+- **Accessibility** (from the POC's audit): every modal and dialog traps focus while open (everything behind it is `inert`), moves focus into itself when it opens, returns focus to what opened it when it closes, and closes on Escape when it can be dismissed. If what opened it has gone (the FAB drops its button while a draft is open), focus goes to the FAB, or to the file tree if the FAB is disabled. The file tree has one tab stop: the focused row, or the first row if that one has gone. The file tree follows the WAI-ARIA tree view pattern: Up and Down move between rows, Right and Left expand and collapse folders, Space selects, Shift with Up or Down extends the selection, and Home and End jump to the first and last row.
 
 ## 8. Communication between server and webapp
 
@@ -405,7 +407,7 @@ Without an episode name, the brackets follow the episode code in the same way: `
   This format isn't configurable.
 - **Groups** come last, **each with its own `-`**, in their original order: `[1080p x265 -NTb -rartv]`. In source names, groups appear either separately (`…-GGEZ-RARBG`) or in the form `…-NTb[rartv]`. A trailing part that completes a known tag isn't a group: in `…WEB-DL-NTb`, `-DL` belongs to `WEB-DL`, and only `NTb` is a group.
 - **`DUP-{n}`** is the **last tag, before the groups**: `[1080p WEB-DL x265 DUP-1 -ELiTE]`.
-- **The order of tags is decided by the server.** The POC orders them by category: resolution, source, streaming service, HDR, audio, codec, then everything else (such as `REPACK` and unknown tags), keeping the original order within a category. 
+- **The order of tags is decided by the server.** re-name orders them by category: resolution, source, streaming service, HDR, audio, codec, then everything else (such as `REPACK` and unknown tags), keeping the original order within a category. 
 
 ### 9.4 Finding and transforming tags
 
@@ -468,6 +470,8 @@ The user moves the result from the target into the media server's library by han
 ## 12. Packaging and distribution
 
 - **`deno compile`** for each target: Linux x64 and arm64, macOS arm64 and x64, Windows x64. Built in CI, published to GitHub Releases, gzipped (about 30 MB each).
+  - `deno task compile` (`scripts/compile.ts`) builds the webapp, then each target into `dist/re-name-<target>`, embedding `packages/webapp/dist`. The permissions are fixed at build time: read, write, env and sys; the network only for `127.0.0.1` and `api.themoviedb.org`; and only that OS's browser opener. Never `--env-file`.
+  - `.github/workflows/ci.yml` checks and tests on Linux, macOS and Windows for every push. `.github/workflows/release.yml` runs on a `v*` tag: check, test, compile, gzip, and a GitHub Release with generated notes. Neither has run yet: they need pushing.
 - **macOS builds** only have an ad-hoc signature, so downloads hit Gatekeeper's "cannot be verified" warning until they're signed with a Developer ID and notarised. **Windows** shows a SmartScreen warning for unsigned binaries. **Open:** signing.
 - The binary must be on the `PATH` for `re-name` to work as a command. The README gives manual install steps. **Open:** an install script, and signing.
 
@@ -478,7 +482,8 @@ Settled for the implementation (2026-10-18), and recorded in the sections named:
 Still open:
 
 1. Signing, notarisation and an install script (§12).
-2. A manual check before release: a sample target folder scanned by real Plex, Jellyfin and Emby servers, to confirm the formats in §9 (listed in `docs/manual-checks.md`).
+2. **Windows hasn't been run.** The tests skip the read-only folder case there, and the same-drive check falls back to comparing volume roots when `dev` is null. The CI workflow runs the tests on Windows once it's pushed; the manual checks cover the rest.
+3. A manual check before release: a sample target folder scanned by real Plex, Jellyfin and Emby servers, to confirm the formats in §9 (listed in `docs/manual-checks.md`).
 
 ## 14. Later features
 
