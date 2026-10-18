@@ -60,7 +60,7 @@ export class FilesSection extends LitElement {
       .row.selected {
         background: var(--primary-soft);
       }
-      .row.off {
+      .row.file.off {
         cursor: default;
       }
       .row.off .name,
@@ -164,9 +164,11 @@ export class FilesSection extends LitElement {
     const check = folderCheck(folder, selection);
     const all = filesUnder(folder);
     const selectable = all.filter(isSelectable).length;
+    // Dimmed like a queued file once everything in it is queued (or skipped).
+    const done = selectable === 0 && all.some((f) => f.status.state === 'queued');
     return html`
       <div
-        class="row folder ${open ? 'open' : ''}"
+        class="row folder ${open ? 'open' : ''} ${done ? 'off' : ''}"
         style="--depth:${depth}"
         role="treeitem"
         aria-level=${depth + 1}

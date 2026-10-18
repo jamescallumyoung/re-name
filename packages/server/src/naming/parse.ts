@@ -30,6 +30,7 @@ const SAMPLE = /(^|[\s._-])sample([\s._-]|$)/i;
 const SPLIT_PART = /(^|[\s._-])(cd|pt|part|disc|disk|dvd)[\s._-]?\d{1,2}([\s._-]|$)/i;
 const EPISODE = /(?:^|[\s._-])S(\d{1,2})E(\d{1,3})((?:-?E\d{1,3})+)?(?=[\s._-]|$)/i;
 const YEAR = /(?:^|[\s._(-])((?:19|20)\d\d)(?=[\s._)-]|$)/g;
+const TRAILING_BRACKET = /\[([^[\]]*)\]\s*$/;
 /** One or more trailing groups: `-NTb`, `-NTb[rartv]`, `-GGEZ-RARBG`. */
 const GROUPS = /((?:-[A-Za-z0-9]+(?:\[[A-Za-z0-9]+\])*)+)$/;
 
@@ -89,10 +90,16 @@ function firstKnownTagIndex(stem: string, rules: TagRules): number {
 
 /**
  * Splits the text after the title, year or episode into tags and release groups
- * (spec P1.4, P1.5, P1.7). Text before the first known tag is an episode name in
+ * (spec P1.4, P1.5, P1.7, P1.8). Text before the first known tag is an episode name in
  * the source, and isn't a tag.
  */
 export function parseTags(text: string, rules: TagRules): { tags: FoundTag[]; groups: string[] } {
+  // Trailing brackets are groups, whatever they hold: `-MeGusta[eztv.re]` (P1.5).
+  const bracketed: string[] = [];
+  for (let m = TRAILING_BRACKET.exec(text); m; m = TRAILING_BRACKET.exec(text)) {
+    bracketed.unshift((m[1] ?? '').trim());
+    text = text.slice(0, m.index).replace(/[\s._]+$/, '');
+  }
   let body = text.replace(/\s+/g, '.');
   const groups: string[] = [];
   const g = GROUPS.exec(body);
@@ -114,6 +121,19 @@ export function parseTags(text: string, rules: TagRules): { tags: FoundTag[]; gr
     body = head;
   }
 
+  let tags = readTags(body, rules);
+  // A group the pattern above can't read (`x265-GRP_X`) is left stuck to the last tag (P1.8).
+  const at = tags.at(-1)?.known === false ? stuckGroupAt(body, rules) : null;
+  if (at !== null) {
+    groups.unshift(...body.slice(at + 1).split('-').filter((g) => g !== ''));
+    tags = readTags(body.slice(0, at), rules);
+  }
+  groups.push(...bracketed.filter((g) => g !== ''));
+  return { tags, groups };
+}
+
+/** Known tags, and unknown tokens after the first known one (P1.4). */
+function readTags(body: string, rules: TagRules): FoundTag[] {
   const tags: FoundTag[] = [];
   let seenKnown = false;
   let i = 0;
@@ -134,5 +154,18 @@ export function parseTags(text: string, rules: TagRules): { tags: FoundTag[]; gr
     if (seenKnown && token) tags.push({ source: token, value: token, known: false });
     i += token.length;
   }
-  return { tags, groups };
+  return tags;
+}
+
+/**
+ * Where to split `…x265-GRP_X` into tags and a group: the `-` in the last token
+ * after which the tags end with a known one (the last such), or else its first `-`.
+ * Null if the last token has no `-` in the middle.
+ */
+function stuckGroupAt(body: string, rules: TagRules): number | null {
+  const from = body.lastIndexOf('.') + 1;
+  const dashes = [...body.slice(from).matchAll(/-/g)].map((m) => from + m.index)
+    .filter((d) => d > from && d < body.length - 1);
+  const endsKnown = (d: number) => readTags(body.slice(0, d), rules).at(-1)?.known === true;
+  return dashes.findLast(endsKnown) ?? dashes[0] ?? null;
 }

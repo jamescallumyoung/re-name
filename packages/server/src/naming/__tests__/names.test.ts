@@ -30,14 +30,14 @@ const paths = (...args: Parameters<typeof run>) => run(...args).map((f) => f.new
 
 const BR = 'Blade.Runner.2049.2017.2160p.UHD.BluRay.HDR.DTS-HD.MA.5.1.x265-FraMeSToR.mkv';
 const BR_PLEX =
-  'Blade Runner 2049 (2017) {tmdb-335984}/Blade Runner 2049 (2017) [2160p UHD BluRay HDR DTS-HD MA x265 -FraMeSToR].mkv';
+  'Blade Runner 2049 (2017) {tmdb-335984}/Blade Runner 2049 (2017) [2160p UHD BluRay HDR DTS-HD MA H.265 -FraMeSToR].mkv';
 
 describe('nameQueue', () => {
   it('names a movie in each flavour (N1.1, N1.2)', () => {
     const jobs = [{ id: 'a', draft: draftOf('movie', 335984, BR) }];
     expect(paths(jobs, opts('plex'))).toEqual([BR_PLEX]);
     expect(paths(jobs, opts('jellyfin'))).toEqual([
-      'Blade Runner 2049 (2017) [tmdbid-335984]/Blade Runner 2049 (2017) [tmdbid-335984] - [2160p UHD BluRay HDR DTS-HD MA x265 -FraMeSToR].mkv',
+      'Blade Runner 2049 (2017) [tmdbid-335984]/Blade Runner 2049 (2017) [tmdbid-335984] - [2160p UHD BluRay HDR DTS-HD MA H.265 -FraMeSToR].mkv',
     ]);
     expect(paths(jobs, opts('emby'))[0]).toContain('[tmdbid=335984]/Blade Runner 2049 (2017) [tmdbid=335984] - [');
   });
@@ -87,7 +87,14 @@ describe('nameQueue', () => {
   it('orders tags by category, then by their original order (N1.4)', () => {
     const job = draftOf('movie', 329865, 'Arrival.2016.x265.REPACK.WEB-DL.2160p.mkv');
     expect(paths([{ id: 'a', draft: job }], opts('plex'))[0]).toBe(
-      'Arrival (2016) {tmdb-329865}/Arrival (2016) [2160p WEB-DL x265 REPACK].mkv',
+      'Arrival (2016) {tmdb-329865}/Arrival (2016) [2160p WEB-DL H.265 REPACK].mkv',
+    );
+  });
+
+  it('leaves out tags that repeat an earlier value (N1.4)', () => {
+    const job = draftOf('movie', 329865, 'Arrival.2016.2160p.HEVC.x265.hdr.HDR-GRP.mkv');
+    expect(paths([{ id: 'a', draft: job }], opts('plex'))[0]).toBe(
+      'Arrival (2016) {tmdb-329865}/Arrival (2016) [2160p HDR H.265 -GRP].mkv',
     );
   });
 
@@ -98,8 +105,8 @@ describe('nameQueue', () => {
     ];
     const names = run(jobs, opts('plex'), [BR_PLEX.toUpperCase()]);
     expect(names.map((f) => [f.dup, f.newPath?.slice(f.newPath.indexOf('/') + 1)])).toEqual([
-      [1, 'Blade Runner 2049 (2017) [2160p UHD BluRay HDR DTS-HD MA x265 DUP-1 -FraMeSToR].mkv'],
-      [2, 'Blade Runner 2049 (2017) [2160p UHD BluRay HDR DTS-HD MA x265 DUP-2 -FraMeSToR].mkv'],
+      [1, 'Blade Runner 2049 (2017) [2160p UHD BluRay HDR DTS-HD MA H.265 DUP-1 -FraMeSToR].mkv'],
+      [2, 'Blade Runner 2049 (2017) [2160p UHD BluRay HDR DTS-HD MA H.265 DUP-2 -FraMeSToR].mkv'],
     ]);
   });
 

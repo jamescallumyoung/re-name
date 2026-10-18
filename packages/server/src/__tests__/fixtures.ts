@@ -59,7 +59,7 @@ export const SOURCE_FILES: readonly string[] = [
   'The Office (US)/The.Office.US.S02E03.Office.Olympics.720p.WEB-DL.AAC2.0.H.264-NTb.mkv',
   'notes.txt',
   // The target lives inside the source; the server hides it.
-  'processed/Blade Runner 2049 (2017) {tmdb-335984}/Blade Runner 2049 (2017) [2160p UHD BluRay HDR DTS-HD MA x265 -FraMeSToR].mkv',
+  'processed/Blade Runner 2049 (2017) {tmdb-335984}/Blade Runner 2049 (2017) [2160p UHD BluRay HDR DTS-HD MA H.265 -FraMeSToR].mkv',
 ];
 
 /** Files already in the target, relative to it, for duplicate detection (section 9.5). */

@@ -60,12 +60,13 @@ Conventions:
 - **P1.2** `SxxEyy` (case-insensitive, 1–2 digit season, 1–3 digit episode) gives the season and episode. The title ends where it starts.
 - **P1.3** The year is the last year-like number (1900–2099) before the first tag or the episode, and not the first token. `Blade.Runner.2049.2017…` is from 2017.
 - **P1.4** Known tags are matched **longest first** against whole dot-separated tokens, so a known tag can span tokens (`DDP5.1.Atmos`). Text after the episode code and before the first known tag is an episode name, and isn't a tag. Other tokens after the first known tag are **unknown tags**, kept as they are.
-- **P1.5** Release groups are the trailing `-NAME` parts: one (`-NTb`), several (`-GGEZ-RARBG`), or bracketed (`-NTb[rartv]`, giving `NTb` then `rartv`), in order. A trailing part that completes a known tag (`WEB` + `-DL`) belongs to the tags.
+- **P1.5** Release groups are the trailing `-NAME` parts: one (`-NTb`), several (`-GGEZ-RARBG`), or bracketed (`-NTb[rartv]`, giving `NTb` then `rartv`), in order. Trailing brackets are groups whatever they hold, dots included (`-MeGusta[eztv.re]` gives `MeGusta` then `eztv.re`). A trailing part that completes a known tag (`WEB` + `-DL`) belongs to the tags.
 - **P1.6** Skip rules:
   - **sample:** `sample` as a word in the name, or anywhere under a folder called `Sample`
   - **split-part:** `cd`, `pt`, `part`, `disc`, `disk` or `dvd`, then a number, as a word
   - **multi-episode:** a second episode number after the first (`S01E01E02`, `S01E01-E02`)
 - **P1.7** Each found tag has its `source` text, its `value` from the known-tags file (`null` drops it), and whether it's `known`.
+- **P1.8** If the last tag is unknown and has a `-` in the middle, it's a tag and a release group stuck together, because the group has characters P1.5 doesn't read (`x265-GRP_X`). It splits at the `-` after the longest known tag, or else at the first `-`: the part before is the tag, and the rest (split at any further `-`) are groups, before any P1.5 found.
 
 ## N. Names (§9)
 
@@ -74,7 +75,7 @@ Conventions:
   - Plex: `Title (Year)`, a space, then the brackets
   - Jellyfin and Emby: the folder name, ` - `, then the brackets
 - **N1.3** An episode's folders are `Title (Year) ID/Season NN`. Its file name is `Title (Year) - SNNENN`, then ` - Episode Name` when there is one, then the brackets: after a space for Plex, after ` - ` for Jellyfin and Emby. Season and episode numbers are padded to at least 2 digits.
-- **N1.4** The brackets hold the non-dropped tags, then `DUP-{n}` if any, then each group with its own `-`, separated by spaces. Tags are ordered by their category (resolution, source, service, HDR, audio, codec, other), keeping the original order within a category. Unknown tags count as `other`. With nothing to show there are no brackets, and no separator before them.
+- **N1.4** The brackets hold the non-dropped tags, then `DUP-{n}` if any, then each group with its own `-`, separated by spaces. Tags are ordered by their category (resolution, source, service, HDR, audio, codec, other), keeping the original order within a category. Unknown tags count as `other`. A tag whose value repeats an earlier one, ignoring case (`HEVC.x265` gives `H.265` twice), is left out. With nothing to show there are no brackets, and no separator before them.
 - **N1.5** The episode name is left out when TMDB has only a placeholder (`Episode n`, `Épisode n`, `Folge n`, `Episodio n`, `Aflevering n`, `Avsnitt n`, where n is the episode number), or when the "include episode name" option is off.
 - **N1.6** In every name, the characters `< > : " / \ | ? *` and control characters are each replaced with `_`.
 - **N1.7** If a name would be longer than 255 UTF-8 bytes, the episode name is left out first, with a warning. If it's still too long, the file can't be named (an error).

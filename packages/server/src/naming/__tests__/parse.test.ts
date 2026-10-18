@@ -17,7 +17,7 @@ describe('parseName', () => {
       'BluRay',
       'HDR',
       'DTS-HD MA',
-      'x265',
+      'H.265',
     ]);
     expect(p.groups).toEqual(['FraMeSToR']);
   });
@@ -47,6 +47,10 @@ describe('parseName', () => {
   it('reads one or several release groups, in order (P1.5)', () => {
     expect(parse('Severance.S02E03.1080p.WEB.h264-ETHEL[rartv].mkv').groups).toEqual(['ETHEL', 'rartv']);
     expect(parse('Ted.Lasso.S01E01.720p.WEB.x264-GGEZ-RARBG.mkv').groups).toEqual(['GGEZ', 'RARBG']);
+    const p = parse('Show.S01E01.1080p.WEB.x265-MeGusta[eztv.re].mkv');
+    expect([p.tags.map((t) => t.value), p.groups]).toEqual([['1080p', 'WEB', 'H.265'], ['MeGusta', 'eztv.re']]);
+    expect(parse('Show S01E01 1080p WEB x265-MeGusta [eztv.re].mkv').groups).toEqual(['MeGusta', 'eztv.re']);
+    expect(parse('Show.S01E01.1080p.WEB.x264-GRP_X[TGx][eztv.re].mkv').groups).toEqual(['GRP_X', 'TGx', 'eztv.re']);
   });
 
   it('keeps a part that completes a known tag out of the groups (P1.5)', () => {
@@ -55,12 +59,32 @@ describe('parseName', () => {
     expect(p.groups).toEqual(['NTb']);
   });
 
+  it('splits a group it can’t read from the last tag it’s stuck to (P1.8)', () => {
+    const p = parse('Movie.2020.1080p.BluRay.x264-GROUP_X.mkv');
+    expect([p.tags.map((t) => t.value), p.groups]).toEqual([['1080p', 'BluRay', 'H.264'], ['GROUP_X']]);
+    const q = parse('Show.S01E01.1080p.WEB-DL.DDP5.1.H.264-GRP_A-RARBG.mkv');
+    expect([q.tags.map((t) => t.value), q.groups]).toEqual([['1080p', 'WEB-DL', 'DDP5.1', 'H.264'], [
+      'GRP_A',
+      'RARBG',
+    ]]);
+    const r = parse('Show.S01E01.1080p.WEB.Foo-Bar_1.mkv');
+    expect([r.tags.map((t) => [t.source, t.known]), r.groups]).toEqual([
+      [['1080p', true], ['WEB', true], ['Foo', false]],
+      ['Bar_1'],
+    ]);
+  });
+
+  it('writes every spelling of the two codecs as H.264 or H.265', () => {
+    for (const codec of ['x264', 'h264', 'H.264', 'AVC']) expect(values(`Movie.2020.${codec}.mkv`)).toEqual(['H.264']);
+    for (const codec of ['x265', 'h265', 'H.265', 'HEVC']) expect(values(`Movie.2020.${codec}.mkv`)).toEqual(['H.265']);
+  });
+
   it('gives null for tags the known-tags list drops (P1.7)', () => {
     expect(parse('Ted.Lasso.S04E03.1080p.web-dl.appleVT.265-ELiTE.mkv').tags).toEqual([
       { source: '1080p', value: '1080p', known: true },
       { source: 'web-dl', value: 'WEB-DL', known: true },
       { source: 'appleVT', value: null, known: true },
-      { source: '265', value: 'x265', known: true },
+      { source: '265', value: 'H.265', known: true },
     ]);
   });
 

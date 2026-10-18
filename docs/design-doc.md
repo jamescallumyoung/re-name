@@ -226,7 +226,7 @@ The selected files become the draft Job, shown in a **near-full-page modal**. Th
 
 **3. Tags & names.** Tags are **stored per file**, because files from one folder can come from different releases. But they're **edited per tag**, so files that share tags need no clicks:
 - **A list of the tags found in the Job**, one row each: the spellings found (for example `web-dl · WEB-DL`), how many files have it, and an input for what it becomes. The input changes the value for **every** file with that tag. ✕ drops the tag, ↺ goes back to the known-tags value, and **Files** opens a row per file to change just one. An empty value drops the tag.
-  - Spellings that the known-tags file gives the same value **share one row** (`265` and `x265`, `web-dl` and `WEB-DL`). Unknown tags get a row of their own, marked as unknown.
+  - Spellings that the known-tags file gives the same value **share one row** (`x265` and `HEVC`, `web-dl` and `WEB-DL`). Unknown tags get a row of their own, marked as unknown.
 - **Release groups** get a row too, editable for every file or per file. They apply **as you type**: the field keeps its raw text while it has focus, so the ", " between groups isn't lost.
 - **New names** are listed below the tags, grouped by folder, with each old name underneath. They're worked out **by the server** (§8.3) and refreshed about 200 ms after the last change, with any errors and warnings shown in place.
 
@@ -246,7 +246,7 @@ A sparse description of the draft. Anything the server can get from TMDB by ID (
   "tags": [
     { "source": "1080p", "value": "1080p" },
     { "source": "web-dl", "value": "WEB-DL" },
-    { "source": "265", "value": "x265" },
+    { "source": "265", "value": "H.265" },
     { "source": "appleVT", "value": null }
   ],
   "groups": ["ELiTE"]
@@ -371,22 +371,22 @@ Each flavour uses **its server's own documented format**. The servers might read
 
 ```
 Plex      Blade Runner 2049 (2017) {tmdb-335984}/
-            Blade Runner 2049 (2017) [2160p BluRay HDR x265 -FraMeSToR].mkv
+            Blade Runner 2049 (2017) [2160p BluRay HDR H.265 -FraMeSToR].mkv
 Jellyfin  Blade Runner 2049 (2017) [tmdbid-335984]/
-            Blade Runner 2049 (2017) [tmdbid-335984] - [2160p BluRay HDR x265 -FraMeSToR].mkv
+            Blade Runner 2049 (2017) [tmdbid-335984] - [2160p BluRay HDR H.265 -FraMeSToR].mkv
 Emby      Blade Runner 2049 (2017) [tmdbid=335984]/
-            Blade Runner 2049 (2017) [tmdbid=335984] - [2160p BluRay HDR x265 -FraMeSToR].mkv
+            Blade Runner 2049 (2017) [tmdbid=335984] - [2160p BluRay HDR H.265 -FraMeSToR].mkv
 ```
 
 **TV episode** (the flavours differ only in the ID tag and in what comes before the brackets):
 
 ```
 Plex      Ted Lasso (2020) {tmdb-97546}/Season 04/
-            Ted Lasso (2020) - S04E03 - <Episode Name> [1080p WEB-DL x265 -ELiTE].mkv
+            Ted Lasso (2020) - S04E03 - <Episode Name> [1080p WEB-DL H.265 -ELiTE].mkv
 Jellyfin  Ted Lasso (2020) [tmdbid-97546]/Season 04/
-            Ted Lasso (2020) - S04E03 - <Episode Name> - [1080p WEB-DL x265 -ELiTE].mkv
+            Ted Lasso (2020) - S04E03 - <Episode Name> - [1080p WEB-DL H.265 -ELiTE].mkv
 Emby      Ted Lasso (2020) [tmdbid=97546]/Season 04/
-            Ted Lasso (2020) - S04E03 - <Episode Name> - [1080p WEB-DL x265 -ELiTE].mkv
+            Ted Lasso (2020) - S04E03 - <Episode Name> - [1080p WEB-DL H.265 -ELiTE].mkv
 ```
 
 Without an episode name, the brackets follow the episode code in the same way: `Ted Lasso (2020) - S04E03 [1080p …].mkv` for Plex, and `Ted Lasso (2020) - S04E03 - [1080p …].mkv` for Jellyfin and Emby.
@@ -399,14 +399,14 @@ Without an episode name, the brackets follow the episode code in the same way: `
 ### 9.3 Brackets: tags, `DUP-{n}` and groups
 
 - **Tags are never invented.** The brackets hold only what was found:
-  - tags and groups: `[1080p WEB-DL x265 -ELiTE]`
-  - only tags: `[1080p WEB-DL x265]`
+  - tags and groups: `[1080p WEB-DL H.265 -ELiTE]`
+  - only tags: `[1080p WEB-DL H.265]`
   - only groups: `[-ELiTE]`
   - neither: no brackets, and no separator before them
 
   This format isn't configurable.
-- **Groups** come last, **each with its own `-`**, in their original order: `[1080p x265 -NTb -rartv]`. In source names, groups appear either separately (`…-GGEZ-RARBG`) or in the form `…-NTb[rartv]`. A trailing part that completes a known tag isn't a group: in `…WEB-DL-NTb`, `-DL` belongs to `WEB-DL`, and only `NTb` is a group.
-- **`DUP-{n}`** is the **last tag, before the groups**: `[1080p WEB-DL x265 DUP-1 -ELiTE]`.
+- **Groups** come last, **each with its own `-`**, in their original order: `[1080p H.265 -NTb -rartv]`. In source names, groups appear either separately (`…-GGEZ-RARBG`) or in the form `…-NTb[rartv]`. A trailing part that completes a known tag isn't a group: in `…WEB-DL-NTb`, `-DL` belongs to `WEB-DL`, and only `NTb` is a group.
+- **`DUP-{n}`** is the **last tag, before the groups**: `[1080p WEB-DL H.265 DUP-1 -ELiTE]`.
 - **The order of tags is decided by the server.** re-name orders them by category: resolution, source, streaming service, HDR, audio, codec, then everything else (such as `REPACK` and unknown tags), keeping the original order within a category. 
 
 ### 9.4 Finding and transforming tags
@@ -414,7 +414,7 @@ Without an episode name, the brackets follow the episode code in the same way: `
 - Tags are found with **regexes**, from a **known-tags config file** in the config folder. Each known tag has a pattern and a transformation (for example `265` → `x265`, `web-dl` → `WEB-DL`, `appleVT` → dropped).
 - Dots separate tags, but **some tags contain dots** (`DDP5.1`, `H.264`, `DDP5.1.Atmos`). So known patterns are tried **longest first** against the name, and whatever's left is split on `.`.
 - **Unknown tags are kept**, as they are, by default.
-- Spellings that the known-tags file gives **the same value are the same tag** when editing (`265` and `x265`), so they share one row on the Tags step. Tags it drops, and unknown tags, are each their own.
+- Spellings that the known-tags file gives **the same value are the same tag** when editing (`x265` and `HEVC`), so they share one row on the Tags step. Tags it drops, and unknown tags, are each their own.
 - The user can change any tag's value for every file in the Job, or for one file (§7.2).
 - **The known-tags file** is `known-tags.json` in the config folder: an ordered list of `{ "pattern", "value", "category" }`. `pattern` is a case-insensitive regex matched against whole dot-separated tokens, `value` is the output (`null` drops the tag), and `category` is one of `resolution`, `source`, `service`, `hdr`, `audio`, `codec`, `other`, which sets the tag's place in the order (§9.3). The built-in defaults are the POC's list.
 - **TMDB requests** are limited to 8 at a time. A `429` is retried after its `Retry-After`.

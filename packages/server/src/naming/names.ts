@@ -55,13 +55,15 @@ function idTag(flavour: Flavour, tmdbId: number): string {
   }
 }
 
-/** The brackets: tags in category order, then `DUP-{n}`, then each group (spec N1.4). */
+/** The brackets: tags in category order without repeats, then `DUP-{n}`, then each group (spec N1.4). */
 function bracket(file: DraftFile, dup: number | null, rules: TagRules): string {
   const tags = file.tags
     .map((t, i) => ({ ...t, i, rank: CATEGORY_ORDER.indexOf(rules.categoryOf(t.source)) }))
     .filter((t) => t.value !== null && t.value.trim() !== '')
     .sort((a, b) => a.rank - b.rank || a.i - b.i)
-    .map((t) => t.value as string);
+    .map((t) => t.value as string)
+    // `HEVC.x265` gives H.265 twice: keep the first.
+    .filter((v, i, all) => all.findIndex((w) => w.toLowerCase() === v.toLowerCase()) === i);
   if (dup !== null) tags.push(`DUP-${dup}`);
   const parts = [...tags, ...file.groups.filter((g) => g.trim() !== '').map((g) => `-${g}`)];
   return parts.length === 0 ? '' : `[${parts.join(' ')}]`;
