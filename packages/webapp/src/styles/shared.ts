@@ -1,4 +1,4 @@
-// Shared component styles, loosely after Material 3: tonal surfaces, filled and tonal
+// Shared component styles, loosely after Material 3: tonal surfaces, filled and text
 // buttons, state layers on hover. Colours and fonts come from tokens.css.
 
 import { css } from 'lit';
@@ -76,15 +76,6 @@ export const buttons = css`
   .btn.primary:hover:not(:disabled) {
     background: var(--primary-hover);
     box-shadow: var(--shadow-1);
-  }
-  /* Tonal: secondary actions. */
-  .btn.tonal {
-    background: var(--primary-container);
-    border-color: transparent;
-    color: var(--on-primary-container);
-  }
-  .btn.tonal:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--primary-container) 85%, var(--primary));
   }
   .btn.text {
     border-color: transparent;

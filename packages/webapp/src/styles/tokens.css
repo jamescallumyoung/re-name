@@ -1,5 +1,5 @@
 /* re-name's design tokens: a Material 3-style dark scheme built from one seed colour,
-   gold #f2c14e (hue 42°). Every role is a tone of it: the surfaces are near-neutral
+   yellow #f2c14e (hue 42°). Every role is a tone of it: the surfaces are near-neutral
    tints of the same hue, the secondary role is a desaturated sand, and the tertiary
    a sage that sits opposite it. Corners are tighter than Material's defaults.
    Custom properties inherit through shadow roots, so every component reads these. */
@@ -35,21 +35,20 @@
   --secondary-container: #4d4430;
   --on-secondary-container: #f1e2bc;
 
-  /* Tertiary: sage, opposite the gold. Success and "connected". */
+  /* Tertiary: sage, opposite the yellow. Success and "connected". */
   --tertiary: #aed0b2;
   --tertiary-container: #2f4d36;
   --on-tertiary-container: #c9ecd0;
 
   --ok: var(--tertiary);
-  --ok-soft: rgba(174, 208, 178, 0.13);
-  /* Orange, so warnings don't blur into the gold. */
+  /* Orange, so warnings don't blur into the yellow. */
   --warn: #ff9f5a;
   --warn-soft: rgba(255, 159, 90, 0.13);
   --bad: #ff7a72;
   --bad-soft: rgba(255, 122, 114, 0.13);
 
   /* Headers: the Files card, the Queue card and every modal share one header, filled
-     with the seed. Text on it is dark; a button on it is dark with gold text. */
+     with the seed. Text on it is dark; a button on it is dark with yellow text. */
   --head-bg: var(--primary);
   --head-fg: var(--on-primary);
   --head-muted: #5c4710;

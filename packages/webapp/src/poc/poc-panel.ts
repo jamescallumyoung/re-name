@@ -109,6 +109,10 @@ export class PocPanel extends LitElement {
                 true,
               )} /> Another tab holds the session</label>
             <h4>Server events</h4>
+            <label><input type="checkbox" .checked=${c.noHeartbeats} @change=${(e: Event) =>
+              this.set({
+                noHeartbeats: (e.target as HTMLInputElement).checked,
+              })} /> Server stops sending heartbeats</label>
             <div class="row">
               <button class="btn sm" @click=${() => this.server?.push({ type: 'shutting-down' })}>Ctrl-C</button>
               <button class="btn sm" @click=${() => this.server?.push({ type: 'taken-over' })}>Taken over</button>

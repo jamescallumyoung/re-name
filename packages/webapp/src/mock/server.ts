@@ -45,6 +45,8 @@ export interface MockControls {
   diskChanged: boolean;
   /** Pretend another tab holds the session (applies on the next claim). */
   otherTab: boolean;
+  /** Stop sending heartbeats, as if the connection were in trouble. */
+  noHeartbeats: boolean;
   /** Pretend re-name was started with --dry-run (applies on the next claim). */
   dryRun: boolean;
 }
@@ -69,7 +71,14 @@ const initialState = (): State => ({
   nextJob: 1,
   version: 1,
   optionsChosen: false,
-  controls: { latency: 'normal', failApplyAt: null, diskChanged: false, otherTab: false, dryRun: false },
+  controls: {
+    latency: 'normal',
+    failApplyAt: null,
+    diskChanged: false,
+    otherTab: false,
+    dryRun: false,
+    noHeartbeats: false,
+  },
 });
 
 class HttpError extends Error {
@@ -108,7 +117,9 @@ export class MockServer {
 
   constructor(private readonly storage: Storage | null = globalThis.sessionStorage ?? null) {
     this.state = this.load();
-    setInterval(() => this.broadcast({ type: 'heartbeat' }), 5000);
+    setInterval(() => {
+      if (!this.state.controls.noHeartbeats) this.broadcast({ type: 'heartbeat' });
+    }, 5000);
   }
 
   // ---------- controls (the POC panel) ----------
@@ -463,7 +474,10 @@ export class MockServer {
   private load(): State {
     try {
       const raw = this.storage?.getItem(STORAGE_KEY);
-      if (raw) return { ...initialState(), ...JSON.parse(raw) };
+      if (raw) {
+        const saved = JSON.parse(raw);
+        return { ...initialState(), ...saved, controls: { ...initialState().controls, ...saved.controls } };
+      }
     } catch {
       // A broken or blocked store starts afresh.
     }

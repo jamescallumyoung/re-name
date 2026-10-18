@@ -109,6 +109,23 @@ export class AppHeader extends LitElement {
         border-radius: 50%;
         background: var(--ok);
       }
+      .lost {
+        color: var(--warn);
+      }
+      .lost .dot {
+        background: var(--warn);
+        animation: blink 1.2s ease-in-out infinite;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0.25;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .lost .dot {
+          animation: none;
+        }
+      }
       @media (max-width: 800px) {
         .status span:last-child,
         .settings .ep {
@@ -135,7 +152,10 @@ export class AppHeader extends LitElement {
         <span class="ep">Episode names ${options.includeEpisodeName ? 'on' : 'off'}</span>
         ${icon('settings')}
       </button>
-      <span class="status" title="Connected to the re-name server"><span class="dot"></span><span>Connected</span></span>
+      ${this.c.store.connection === 'connected'
+        ? html`<span class="status" title="Connected to the re-name server"><span class="dot"></span><span>Connected</span></span>`
+        : html`<span class="status lost" title="No word from the re-name server. Is it still running?"><span class="dot"></span><span
+          >Reconnecting…</span></span>`}
     `;
   }
 }

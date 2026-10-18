@@ -39,6 +39,8 @@ export interface ApplyState {
 }
 
 const TAB_KEY = 're-name.tab';
+/** How long without a heartbeat before the connection counts as lost: about two missed beats. */
+const HEARTBEAT_TIMEOUT = 12_000;
 
 export class Store extends EventTarget {
   phase: Phase = 'connecting';
@@ -65,6 +67,8 @@ export class Store extends EventTarget {
   busy = false;
   toasts: Toast[] = [];
   lastHeartbeat = Date.now();
+  /** Whether the server's heartbeats are arriving (design doc, section 8.5). */
+  connection: 'connected' | 'reconnecting' = 'connected';
 
   private toastId = 0;
   private previewTimer: ReturnType<typeof setTimeout> | undefined;
@@ -104,7 +108,11 @@ export class Store extends EventTarget {
       this.emit();
       return;
     }
-    this.api.listen((e) => this.onEvent(e), () => this.toast('Lost contact with the re-name server.', 'bad'));
+    this.api.listen((e) => this.onEvent(e), () => this.setConnection('reconnecting'));
+    // No heartbeat for a while means the connection is in trouble, even if the stream hasn't closed.
+    setInterval(() => {
+      if (Date.now() - this.lastHeartbeat > HEARTBEAT_TIMEOUT) this.setConnection('reconnecting');
+    }, 2000);
     await this.loadTree();
     this.phase = 'ready';
     this.expanded = new Set(folderPaths(this.tree as FolderNode).filter((p) => p.split('/').length === 1));
@@ -116,10 +124,18 @@ export class Store extends EventTarget {
     void this.api.call('session.end', {}).catch(() => {});
   }
 
+  private setConnection(state: Store['connection']): void {
+    if (state === this.connection) return;
+    this.connection = state;
+    if (state === 'connected') this.toast('Reconnected to the re-name server.', 'ok');
+    this.emit();
+  }
+
   private onEvent(event: ServerEvent): void {
     switch (event.type) {
       case 'heartbeat':
         this.lastHeartbeat = Date.now();
+        this.setConnection('connected');
         return;
       case 'apply-progress':
         this.apply = { progress: event.progress, result: null };
