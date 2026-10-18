@@ -258,15 +258,24 @@ export class ReNameApp extends LitElement {
     const dialog = this.renderRoot.querySelector('.dialog');
     const newDialog = dialog !== this.dialog;
     this.dialog = dialog;
-    const back = this.closed.find((el) => el?.isConnected);
+    const closed = this.closed;
     this.closed = [];
     if (top === 'dialog') {
       if (newDialog && dialog?.parentElement) focusInto(dialog.parentElement);
     } else if (top && this.opened.includes(top)) {
       const modal = this.renderRoot.querySelector<LitElement>(`${top}-modal`);
       void modal?.updateComplete.then(() => focusInto(modal.renderRoot));
-    } else if (back) {
-      back.focus();
+    } else if (closed.length) {
+      const back = closed.find((el) => el?.isConnected);
+      if (back) return back.focus();
+      // The opener has gone, or there wasn't one (the FAB disables its button while it starts a draft):
+      // the FAB, or if it's disabled, the file tree.
+      const fab = this.renderRoot.querySelector<LitElement>('job-fab');
+      const files = this.renderRoot.querySelector<LitElement>('files-section');
+      void Promise.all([fab?.updateComplete, files?.updateComplete]).then(() => {
+        const button = fab?.renderRoot.querySelector<HTMLButtonElement>('button:not([disabled])');
+        (button ?? files?.renderRoot.querySelector<HTMLElement>('[role="treeitem"][tabindex="0"]'))?.focus();
+      });
     }
   }
 

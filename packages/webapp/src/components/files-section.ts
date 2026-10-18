@@ -24,6 +24,8 @@ export class FilesSection extends LitElement {
   accessor focusPath: string | null = null;
   /** Set by a key press, so the next render moves focus to `focusPath`. */
   private moveFocus = false;
+  /** The row with `tabindex="0"`: `focusPath` while it's shown, or else the first row. */
+  private stop: string | null = null;
 
   static override styles = [
     base,
@@ -119,6 +121,8 @@ export class FilesSection extends LitElement {
     const store = this.c.store;
     const { tree, selection, expanded } = store;
     const files = tree ? filesUnder(tree) : [];
+    const rows = tree ? visibleRows(tree, expanded) : [];
+    this.stop = rows.some((r) => r.path === this.focusPath) ? this.focusPath : (rows[0]?.path ?? null);
     const available = files.filter(isSelectable).length;
     const allOpen = tree ? folderPaths(tree).slice(1).every((p) => expanded.has(p)) : false;
     const bytes = files.filter((f) => selection.has(f.path)).reduce((n, f) => n + f.size, 0);
@@ -238,9 +242,7 @@ export class FilesSection extends LitElement {
 
   /** 0 for the one focusable row (the focused one, or the first), -1 for the rest. */
   private tabStop(path: string): number {
-    const tree = this.c.store.tree;
-    const current = this.focusPath ?? (tree?.children[0]?.path ?? null);
-    return path === current ? 0 : -1;
+    return path === this.stop ? 0 : -1;
   }
 
   /** The WAI-ARIA tree keys: arrows, Home, End, Space and Enter (design doc §7.4). */
