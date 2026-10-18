@@ -43,7 +43,7 @@ Conventions:
 ## S. Scanning the source (§7.1, §10)
 
 - **S1.1** The tree lists the source's folders and video files. Video files are recognised by extension, ignoring case: `mkv mp4 m4v avi mov wmv ts m2ts webm mpg mpeg`. Folders with no video files anywhere inside are left out.
-- **S1.2** Hidden entries (names starting with `.`) are skipped, as is the target folder when it's inside the source, and symbolic links whose real path is outside the source.
+- **S1.2** Hidden entries (names starting with `.`) are skipped, as is the target folder when it's inside the source, and symbolic links whose real path is outside the source. A symbolic link inside the source is followed only to a file: following linked folders could loop.
 - **S1.3** Each file gets its size and its status:
   - `skipped` with reason `sample`, `multi-episode` or `split-part` (P1.6)
   - else `queued` with its Job ID, if it's in an approved Job
