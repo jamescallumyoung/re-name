@@ -87,9 +87,9 @@ Conventions:
 - **T1.3** **Search** queries `search/movie` and `search/tv` in parallel and merges the results, keeping TMDB's order within each and alternating between them. A match has its type, ID, title, year (from `release_date` or `first_air_date`, else 0) and poster URL (`https://image.tmdb.org/t/p/w185<poster_path>`, or `null`).
 - **T1.4** **Details** for a movie come from `movie/{id}`. For TV they come from `tv/{id}`, plus `tv/{id}/season/{n}` for each season it lists, giving each season's episodes with their names. Placeholder names (N1.5) become `null`.
 - **T1.5** **Suggestions** use the most common parsed title and year among the files (ties go to the first file's). They search with that title, then rank the results: shared title words (most), then a matching year, then the right type (TV when the files have episode numbers). They return up to 5.
-- **T1.6** At most 8 requests are in flight. A `429` waits for `Retry-After` seconds (default 1) and retries, up to 3 times.
+- **T1.6** At most 8 requests are in flight. A `429` or `5xx` waits for `Retry-After` seconds (default 1) and retries, up to 3 times.
 - **T1.7** Successful responses are cached in the cache folder for 7 days, keyed by the request URL without the credential. A cached response is used instead of a request.
-- **T1.8** A network failure, or a `5xx` after the retries, becomes a `502` with the message "TMDB can't be reached". A `404` for details becomes a `404`.
+- **T1.8** A network failure, or a `5xx` after the retries, becomes a `502` with the message "TMDB can't be reached". A `401` becomes a `502` saying TMDB refused the credential. A `404` for details becomes a `404`.
 
 ## H. HTTP, session and security (§8)
 
