@@ -27,6 +27,12 @@ export class State {
   /** Goes up with every change to the Queue or the options (spec R1.1). */
   version = 1;
   scan: Scan = new Map();
+  /**
+   * The target's files at the last scan. Names are worked out against this, not the
+   * live folder, so a file appearing later is caught by the apply's check rather
+   * than silently renumbering `DUP-{n}` (spec A1.1).
+   */
+  targetSnapshot: string[] = [];
   applying = false;
   private nextJob = 1;
   private readonly titles = new Map<string, Details>();
@@ -58,6 +64,7 @@ export class State {
 
   async rescan(): Promise<void> {
     this.scan = await scanSource(this.run.source, this.run.target, this.run.rules);
+    this.targetSnapshot = await this.targetFiles();
   }
 
   /** Each queued path's Job, leaving out `exceptJob`'s. */
@@ -83,7 +90,7 @@ export class State {
     return nameQueue(
       jobs,
       this.options,
-      await this.targetFiles(),
+      this.targetSnapshot,
       (type, id) => this.titles.get(`${type}/${id}`),
       this.run.rules,
     );

@@ -15,7 +15,8 @@
     "noFallthroughCasesInSwitch": true
   },
   "tasks": {
-    "check": "deno check src && deno lint && deno fmt --check",
-    "test": "deno test --allow-read --allow-write --allow-env --allow-net --allow-run --allow-sys src"
+    "check": "deno check main.ts src && deno lint && deno fmt --check",
+    "test": "deno test --allow-read --allow-write --allow-env --allow-net --allow-run --allow-sys src",
+    "start": "deno run --allow-read --allow-write --allow-env --allow-net --allow-run --allow-sys main.ts"
   }
 }
