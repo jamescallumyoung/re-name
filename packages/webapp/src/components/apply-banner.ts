@@ -1,5 +1,9 @@
 // The banner below the Queue: one large button that applies the whole Queue, its
 // label and arrow on the right. Shown while the Queue has Jobs.
+//
+// Two idle animations draw the eye to it: the arrow is a trail of three chevrons
+// lighting up in turn, and a sharp band of light sweeps across every 17 seconds. The
+// light only raises the label's contrast, so it stays easy to read.
 
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
@@ -17,10 +21,10 @@ export class ApplyBanner extends LitElement {
       :host {
         display: block;
       }
-      :host([hidden]) {
-        display: none;
-      }
       button {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
         display: flex;
         align-items: center;
         justify-content: flex-end;
@@ -36,36 +40,20 @@ export class ApplyBanner extends LitElement {
         text-align: right;
         box-shadow: var(--shadow-1);
         transition: background 0.15s;
-        /* The gold gently darkens and returns, to draw the eye to the next step. */
-        animation: pulse 2.8s ease-in-out infinite;
       }
-      @keyframes pulse {
-        0%,
-        100% {
-          background-color: var(--primary);
-        }
-        /* Gold mixed 70/30 with the cards' background: a clearly darker gold that keeps
-          the dark label readable (about 5.3:1, above WCAG AA's 4.5:1). */
-        50% {
-          background-color: color-mix(in srgb, var(--primary) 70%, var(--surface));
-        }
-      }
-      /* An animation outranks other styles, so hover stops it to show its own colour. */
       button:hover:not(:disabled) {
-        animation: none;
         background: var(--primary-hover);
-      }
-      @media (prefers-reduced-motion: reduce) {
-        button {
-          animation: none;
-        }
       }
       button:disabled {
         background: var(--surface-4);
         color: var(--muted);
         box-shadow: none;
-        animation: none;
         cursor: not-allowed;
+      }
+      .label,
+      .arrows {
+        position: relative;
+        z-index: 1;
       }
       .label {
         display: flex;
@@ -78,14 +66,88 @@ export class ApplyBanner extends LitElement {
         font-weight: 600;
         opacity: 0.75;
       }
-      .arrow {
+
+      /* The arrow trail: three chevrons light up in turn and step forward. */
+      .arrows {
+        display: flex;
+        align-items: center;
+        transition: transform 0.15s;
+      }
+      .arrows svg {
         width: 30px;
         height: 30px;
         stroke-width: 2.5;
-        transition: transform 0.15s;
+        animation: trail 1.5s ease-in-out infinite;
       }
-      button:hover:not(:disabled) .arrow {
+      .arrows svg + svg {
+        margin-left: -16px;
+      }
+      .arrows svg:nth-child(2) {
+        animation-delay: 0.18s;
+      }
+      .arrows svg:nth-child(3) {
+        animation-delay: 0.36s;
+      }
+      @keyframes trail {
+        0%,
+        100% {
+          opacity: 0.25;
+          transform: translateX(0);
+        }
+        40% {
+          opacity: 1;
+          transform: translateX(5px);
+        }
+      }
+      button:hover:not(:disabled) .arrows {
         transform: translateX(3px);
+      }
+
+      /* The shine: a sharp band of light sweeps across in about 1.2 s, every 17 s. */
+      .shine {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+      }
+      .shine::before {
+        content: '';
+        position: absolute;
+        top: -10%;
+        bottom: -10%;
+        left: 0;
+        width: 14%;
+        background: rgba(255, 250, 232, 0.5);
+        transform: translateX(-160%) skewX(-22deg);
+        animation: shine 17s cubic-bezier(0.7, 0, 0.3, 1) infinite;
+      }
+      @keyframes shine {
+        0% {
+          transform: translateX(-160%) skewX(-22deg);
+        }
+        7%,
+        100% {
+          transform: translateX(820%) skewX(-22deg);
+        }
+      }
+
+      button:disabled .shine,
+      button:disabled .arrows svg {
+        animation: none;
+        display: none;
+      }
+      button:disabled .arrows svg:last-child {
+        display: block;
+        opacity: 1;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .shine {
+          display: none;
+        }
+        .arrows svg {
+          animation: none;
+          opacity: 1;
+        }
       }
     `,
   ];
@@ -97,13 +159,14 @@ export class ApplyBanner extends LitElement {
     const files = queue.jobs.reduce((n, j) => n + j.draft.files.length, 0);
     return html`
       <button ?disabled=${apply !== null} @click=${() => store.askApply()}>
+        <span class="shine" aria-hidden="true"></span>
         <span class="label">
           ${session?.dryRun ? 'Dry-run the Queue' : 'Apply the Queue'}
           <span class="sub">${queue.jobs.length} Job${queue.jobs.length === 1 ? '' : 's'} · ${files} file${files === 1
             ? ''
             : 's'} → ${session?.targetPath}</span>
         </span>
-        ${icon('chev', 'arrow')}
+        <span class="arrows" aria-hidden="true">${icon('chev')}${icon('chev')}${icon('chev')}</span>
       </button>
     `;
   }
