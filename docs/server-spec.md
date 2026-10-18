@@ -102,7 +102,7 @@ Conventions:
 - **H1.7** `session.claim` with the launch token sets the session cookie (`HttpOnly`, `SameSite=Strict`, `Path=/`). With the cookie and no token, it also works, for a reload. With neither, it's a `403`.
 - **H1.8** Only one tab holds the session. A claim from the holding tab ID, or when none holds it, succeeds. A claim from another tab ID while the event stream is open gets `409`. A claim from another tab ID while the stream is closed takes over: the old tab ID is replaced.
 - **H1.9** `GET /events` (with the cookie) opens the event stream, an SSE stream of JSON events. A newer stream replaces an older one, which first gets `taken-over`. A heartbeat event goes out every 5 seconds.
-- **H1.10** When no stream has been open for 15 seconds, the run ends, unless an apply is running, in which case it ends once the apply finishes.
+- **H1.10** Once the page has connected at least once, the run ends when no stream has been open for 15 seconds, unless an apply is running, in which case it ends once the apply finishes. (Before the first connection there's no limit, so a slow first open, as with `--no-open`, isn't cut short.)
 - **H1.11** On Ctrl-C (SIGINT, and SIGTERM where supported), `shutting-down` goes to the stream. Once any apply has finished, the run ends.
 - **H1.12** Ending the run stops the server and the lock refresh, deletes the lock file, and exits with status 0.
 
