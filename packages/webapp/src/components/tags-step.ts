@@ -60,7 +60,7 @@ export class TagsStep extends LitElement {
       .tag-row,
       .file-row {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 100px 18px 220px 130px;
+        grid-template-columns: minmax(0, 1fr) 140px 18px 220px 130px;
         gap: 14px;
         align-items: center;
         min-height: 54px;
@@ -85,6 +85,7 @@ export class TagsStep extends LitElement {
       .n {
         color: var(--muted);
         font-size: 13px;
+        white-space: nowrap;
         display: flex;
         gap: 6px;
         align-items: center;
@@ -226,7 +227,9 @@ export class TagsStep extends LitElement {
     return html`
       <div>
         <div class="label">Tags <span>· one value for every file; an empty value drops the tag</span></div>
-        <div class="list">${columnsOf(draft.files).map((col) => this.renderTag(col))} ${this.renderGroups()}</div>
+        <div class="list">
+          ${columnsOf(draft.files).map((col) => this.renderTag(col))} ${this.renderAdd()} ${this.renderGroups()}
+        </div>
       </div>
       <div>
         <div class="label">New names <span>· worked out by the server</span></div>
@@ -250,7 +253,9 @@ export class TagsStep extends LitElement {
           <span class="source" title=${col.sources.join(', ')}>${col.sources.join(' · ')}</span>
           <span class="n">
             ${col.count === draft.files.length ? 'all files' : `${col.count} of ${draft.files.length}`}
-            ${col.known
+            ${col.added
+              ? html`<span class="tag dim" title="Added by hand">added</span>`
+              : col.known
               ? nothing
               : html`<span class="tag dim" title="Not in the known-tags file: kept as it is">?</span>`}
           </span>
@@ -266,8 +271,13 @@ export class TagsStep extends LitElement {
           <span class="tools">
             <button class="icon-btn" title="Drop this tag" ?disabled=${value === null} @click=${() =>
               store.setColumn(col.key, null)}>${icon('x')}</button>
-            <button class="icon-btn" title="Back to the known-tags value" ?disabled=${!set} @click=${() =>
-              store.setColumn(col.key, undefined)}>${icon('undo')}</button>
+            ${col.added
+              ? html`<button class="icon-btn" title="Remove this tag from every file" @click=${() =>
+                store.removeAddedTag(col.key)}>${icon('trash')}</button>`
+              : html`
+                <button class="icon-btn" title="Back to the known-tags value" ?disabled=${!set}
+                  @click=${() => store.setColumn(col.key, undefined)}>${icon('undo')}</button>
+              `}
             <button class="per-file ${open ? 'open' : ''}" aria-expanded=${open} @click=${() => this.toggle(col.key)}>
               ${icon('chev')} Files${own ? html`<span class="changed">·${own}</span>` : nothing}
             </button>
@@ -298,6 +308,35 @@ export class TagsStep extends LitElement {
             `;
           })
           : nothing}
+      </div>
+    `;
+  }
+
+  /** Adds a tag by hand to every file; "Files" on its row then drops it from some. */
+  private renderAdd() {
+    const add = (input: HTMLInputElement) => {
+      this.c.store.addTag(input.value);
+      input.value = '';
+    };
+    return html`
+      <div class="item">
+        <div class="tag-row">
+          <span class="source plain">Add a tag</span>
+          <span class="n">to every file</span>
+          ${icon('arrow', 'to')}
+          <input
+            type="text"
+            class="value"
+            id="add-tag"
+            aria-label="Add a tag to every file"
+            placeholder="such as H.264"
+            @keydown=${(e: KeyboardEvent) => e.key === 'Enter' && add(e.target as HTMLInputElement)}
+          />
+          <span class="tools">
+            <button class="btn sm text" @click=${() =>
+              add(this.renderRoot.querySelector<HTMLInputElement>('#add-tag')!)}>${icon('plus')} Add</button>
+          </span>
+        </div>
       </div>
     `;
   }

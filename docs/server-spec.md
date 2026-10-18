@@ -67,6 +67,7 @@ Conventions:
   - **multi-episode:** a second episode number after the first (`S01E01E02`, `S01E01-E02`)
 - **P1.7** Each found tag has its `source` text, its `value` from the known-tags file (`null` drops it), and whether it's `known`.
 - **P1.8** If the last tag is unknown and has a `-` in the middle, it's a tag and a release group stuck together, because the group has characters P1.5 doesn't read (`x265-GRP_X`). It splits at the `-` after the longest known tag, or else at the first `-`: the part before is the tag, and the rest (split at any further `-`) are groups, before any P1.5 found.
+- **P1.9** Names re-name (or a media server tool) already wrote parse back to the same tags and groups. A trailing bracket holding spaces, or exactly one known tag, is a tag list (`[1080p BluRay DD5.1 H.264 -GalaxyRG]`): words starting with `-` are groups, `DUP-{n}` is dropped (it's worked out again), and the rest are tags. Media server ID tags (`{tmdb-…}`, `[tmdbid-…]`, `[tmdbid=…]`, and the same for `imdb` and `tvdb`) are ignored.
 
 ## N. Names (§9)
 

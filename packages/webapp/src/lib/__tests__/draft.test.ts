@@ -2,6 +2,7 @@ import { describe, it } from '@std/testing/bdd';
 import { expect } from '@std/expect';
 import type { AnalysedFile, Details, FoundTag } from '@re-name/protocol';
 import {
+  addTag,
   columnsOf,
   type Draft,
   effectiveValue,
@@ -10,6 +11,8 @@ import {
   hasCellValue,
   likelySeason,
   newDraft,
+  removeAddedTag,
+  restoreChoices,
   stepsOf,
   tagKey,
   toDraftJob,
@@ -119,6 +122,48 @@ describe('toDraftJob', () => {
   it('sends no season or episode for a movie', () => {
     const d: Draft = { ...newDraft([file('a.mkv', [])]), match: movie };
     expect(toDraftJob(d)?.files[0]).toMatchObject({ season: null, episode: null });
+  });
+});
+
+describe('tags added by hand', () => {
+  const draft = () => {
+    const d = newDraft([
+      file('a.mkv', [tag('1080p', '1080p'), tag('x264', 'H.264')]),
+      file('b.mkv', [tag('1080p', '1080p')]),
+    ]);
+    d.match = movie;
+    return d;
+  };
+  const sent = (d: Draft) => toDraftJob(d)?.files.map((f) => f.tags.map((t) => `${t.source}=${t.value}`));
+
+  it('adds a tag to every file that doesn’t have that value, as its own column', () => {
+    const d = draft();
+    addTag(d, ' H.264 ');
+    expect(sent(d)).toEqual([['1080p=1080p', 'x264=H.264'], ['1080p=1080p', 'H.264=H.264']]);
+    addTag(d, 'BluRay');
+    expect(columnsOf(d.files).filter((c) => c.added).map((c) => [c.sources, c.count])).toEqual([[['BluRay'], 2]]);
+  });
+
+  it('can drop an added tag from one file, or remove it from all', () => {
+    const d = draft();
+    addTag(d, 'BluRay');
+    d.cells['a.mkv'] = { [tagKey(tag('BluRay', 'BluRay'))]: null };
+    expect(sent(d)?.map((f) => f.at(-1))).toEqual(['BluRay=null', 'BluRay=BluRay']);
+    removeAddedTag(d, tagKey(tag('BluRay', 'BluRay')));
+    expect(sent(d)).toEqual([['1080p=1080p', 'x264=H.264'], ['1080p=1080p']]);
+    expect(d.cells['a.mkv']).toEqual({});
+  });
+
+  it('comes back, with every other choice, when the Job is edited', () => {
+    const d = draft();
+    addTag(d, 'BluRay');
+    d.cells['b.mkv'] = { [tagKey(tag('1080p', '1080p'))]: '2160p' };
+    d.groups['a.mkv'] = ['GalaxyRG'];
+    const job = toDraftJob(d)!;
+    const again = draft();
+    restoreChoices(again, job.files);
+    expect(toDraftJob(again)).toEqual(job);
+    expect(columnsOf(again.files).find((c) => c.added)?.sources).toEqual(['BluRay']);
   });
 });
 

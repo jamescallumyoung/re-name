@@ -92,6 +92,8 @@ export interface FoundTag {
   value: string | null;
   /** `false` for a tag that isn't in the known-tags file: it's kept as it is. */
   known: boolean;
+  /** Set by the webapp on a tag added by hand, which isn't in the file's name. The server never sets it. */
+  added?: boolean;
 }
 
 export interface AnalysedFile {

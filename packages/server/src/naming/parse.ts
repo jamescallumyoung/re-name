@@ -31,6 +31,7 @@ const SPLIT_PART = /(^|[\s._-])(cd|pt|part|disc|disk|dvd)[\s._-]?\d{1,2}([\s._-]
 const EPISODE = /(?:^|[\s._-])S(\d{1,2})E(\d{1,3})((?:-?E\d{1,3})+)?(?=[\s._-]|$)/i;
 const YEAR = /(?:^|[\s._(-])((?:19|20)\d\d)(?=[\s._)-]|$)/g;
 const TRAILING_BRACKET = /\[([^[\]]*)\]\s*$/;
+const ID_TAG = /[[{](?:tmdb|tmdbid|imdb|imdbid|tvdb|tvdbid)[-=][^\]}]*[\]}]/gi;
 /** One or more trailing groups: `-NTb`, `-NTb[rartv]`, `-GGEZ-RARBG`. */
 const GROUPS = /((?:-[A-Za-z0-9]+(?:\[[A-Za-z0-9]+\])*)+)$/;
 
@@ -94,11 +95,22 @@ function firstKnownTagIndex(stem: string, rules: TagRules): number {
  * the source, and isn't a tag.
  */
 export function parseTags(text: string, rules: TagRules): { tags: FoundTag[]; groups: string[] } {
-  // Trailing brackets are groups, whatever they hold: `-MeGusta[eztv.re]` (P1.5).
+  // Media server IDs, from a name re-name (or another tool) wrote, aren't tags (P1.9).
+  text = text.replace(ID_TAG, ' ');
+  // Trailing brackets are groups, whatever they hold: `-MeGusta[eztv.re]` (P1.5)...
   const bracketed: string[] = [];
   for (let m = TRAILING_BRACKET.exec(text); m; m = TRAILING_BRACKET.exec(text)) {
-    bracketed.unshift((m[1] ?? '').trim());
+    const inner = (m[1] ?? '').trim();
     text = text.slice(0, m.index).replace(/[\s._]+$/, '');
+    if (!/\s/.test(inner) && rules.match(inner)?.length !== inner.length) {
+      bracketed.unshift(inner);
+      continue;
+    }
+    // ...unless they hold spaces or one known tag: then they're tags, as re-name writes them (P1.9).
+    const words = inner.split(/\s+/).filter((w) => !/^DUP-\d+$/i.test(w));
+    bracketed.unshift(...words.filter((w) => w.startsWith('-')).map((w) => w.slice(1)));
+    text = `${text} ${words.filter((w) => !w.startsWith('-')).join(' ')}`;
+    break;
   }
   let body = text.replace(/\s+/g, '.');
   const groups: string[] = [];

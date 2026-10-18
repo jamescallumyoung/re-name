@@ -74,6 +74,8 @@ export interface TagColumn {
   known: boolean;
   /** How many files have this tag. */
   count: number;
+  /** Added by hand, not found in the names. */
+  added: boolean;
 }
 
 export function tagKey(tag: FoundTag): string {
@@ -87,13 +89,57 @@ export function columnsOf(files: AnalysedFile[]): TagColumn[] {
     for (const tag of file.tags) {
       const key = tagKey(tag);
       const column = columns.get(key) ??
-        { key, sources: [], defaultValue: tag.value, known: tag.known, count: 0 };
+        { key, sources: [], defaultValue: tag.value, known: tag.known, count: 0, added: tag.added === true };
       if (!column.sources.includes(tag.source)) column.sources.push(tag.source);
       column.count++;
       columns.set(key, column);
     }
   }
   return [...columns.values()];
+}
+
+/**
+ * Adds a tag by hand to every file that doesn't already have one with that value
+ * (design doc §7.2). It's sent like a found tag, with its text as the source, so the
+ * server orders it by what it is (`H.264` sorts as a codec).
+ */
+export function addTag(draft: Draft, text: string): void {
+  const value = text.trim();
+  if (!value) return;
+  const tag: FoundTag = { source: value, value, known: true, added: true };
+  const key = tagKey(tag);
+  draft.files = draft.files.map((f) =>
+    f.tags.some((t) => tagKey(t) === key) ? f : { ...f, tags: [...f.tags, { ...tag }] }
+  );
+}
+
+/** Removes a tag added by hand from every file, with any values set for it. */
+export function removeAddedTag(draft: Draft, key: string): void {
+  draft.files = draft.files.map((f) => ({ ...f, tags: f.tags.filter((t) => !(t.added && tagKey(t) === key)) }));
+  delete draft.columns[key];
+  for (const cells of Object.values(draft.cells)) delete cells[key];
+}
+
+/**
+ * Fills a draft in from an approved Job's files, so editing it starts where it was
+ * left: the episodes, groups and tag values, and any tags added by hand.
+ */
+export function restoreChoices(draft: Draft, jobFiles: DraftJob['files']): void {
+  for (const f of jobFiles) {
+    draft.episodes[f.path] = { season: f.season, episode: f.episode };
+    draft.groups[f.path] = [...f.groups];
+    const file = draft.files.find((a) => a.path === f.path);
+    if (!file) continue;
+    for (const choice of f.tags) {
+      let tag = file.tags.find((t) => t.source === choice.source);
+      if (!tag) {
+        // Not in the name, so it was added by hand.
+        tag = { source: choice.source, value: choice.source, known: true, added: true };
+        file.tags = [...file.tags, tag];
+      }
+      if (tag.value !== choice.value) draft.cells[f.path] = { ...draft.cells[f.path], [tagKey(tag)]: choice.value };
+    }
+  }
 }
 
 /** The value a file's tag will have: its cell, else its column, else the default. */

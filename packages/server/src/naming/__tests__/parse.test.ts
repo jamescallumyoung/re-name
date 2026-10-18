@@ -74,6 +74,33 @@ describe('parseName', () => {
     ]);
   });
 
+  it('reads back names it already wrote, in each flavour (P1.9)', () => {
+    const tags = (name: string) => {
+      const p = parse(name);
+      return [p.title, p.year, p.tags.map((t) => t.value), p.groups];
+    };
+    expect(tags('Hope Gap (2020) [1080p BluRay DD5.1 x264 -GalaxyRG].mkv')).toEqual([
+      'Hope Gap',
+      2020,
+      ['1080p', 'BluRay', 'DD5.1', 'H.264'],
+      ['GalaxyRG'],
+    ]);
+    expect(tags('Hope Gap (2020) [tmdbid=123] - [1080p BluRay H.264 DUP-1 -GalaxyRG -rartv].mkv')).toEqual([
+      'Hope Gap',
+      2020,
+      ['1080p', 'BluRay', 'H.264'],
+      ['GalaxyRG', 'rartv'],
+    ]);
+    expect(tags('Movie (2019) [2160p].mkv')[2]).toEqual(['2160p']);
+    const ep = parse('Severance (2022) - S01E01 - Good News About Hell - [1080p WEB-DL H.264 -NTb].mkv');
+    expect([ep.season, ep.episode, ep.tags.map((t) => t.value), ep.groups]).toEqual([
+      1,
+      1,
+      ['1080p', 'WEB-DL', 'H.264'],
+      ['NTb'],
+    ]);
+  });
+
   it('writes every spelling of the two codecs as H.264 or H.265', () => {
     for (const codec of ['x264', 'h264', 'H.264', 'AVC']) expect(values(`Movie.2020.${codec}.mkv`)).toEqual(['H.264']);
     for (const codec of ['x265', 'h265', 'H.265', 'HEVC']) expect(values(`Movie.2020.${codec}.mkv`)).toEqual(['H.265']);

@@ -16,7 +16,17 @@ import type {
   SessionInfo,
 } from '@re-name/protocol';
 import { type ApiClient, type EventStream, RpcError } from '../api/client.ts';
-import { type Draft, likelySeason, newDraft, type Step, stepsOf, tagKey, toDraftJob } from '../lib/draft.ts';
+import {
+  addTag,
+  type Draft,
+  likelySeason,
+  newDraft,
+  removeAddedTag,
+  restoreChoices,
+  type Step,
+  stepsOf,
+  toDraftJob,
+} from '../lib/draft.ts';
 import { filesUnder, folderPaths, isSelectable, rangeBetween } from '../lib/tree.ts';
 
 export type Phase = 'connecting' | 'ready' | 'blocked' | 'stopped';
@@ -356,17 +366,7 @@ export class Store extends EventTarget {
       if (job) {
         // Fill in what the approved Job chose, so only small changes are needed.
         draft.editingJobId = job.id;
-        for (const f of job.draft.files) {
-          draft.episodes[f.path] = { season: f.season, episode: f.episode };
-          draft.groups[f.path] = [...f.groups];
-          const analysed = files.find((a) => a.path === f.path);
-          for (const choice of f.tags) {
-            const tag = analysed?.tags.find((t) => t.source === choice.source);
-            if (tag && tag.value !== choice.value) {
-              draft.cells[f.path] = { ...draft.cells[f.path], [tagKey(tag)]: choice.value };
-            }
-          }
-        }
+        restoreChoices(draft, job.draft.files);
         await this.chooseMatch(job.match, true);
         draft.step = 'tags';
       } else {
@@ -538,6 +538,20 @@ export class Store extends EventTarget {
   }
 
   /** Sets one file's value; `undefined` goes back to the column's. */
+  addTag(text: string): void {
+    if (!this.draft) return;
+    addTag(this.draft, text);
+    this.schedulePreview();
+    this.emit();
+  }
+
+  removeAddedTag(key: string): void {
+    if (!this.draft) return;
+    removeAddedTag(this.draft, key);
+    this.schedulePreview();
+    this.emit();
+  }
+
   setCell(path: string, key: string, value: string | null | undefined): void {
     const draft = this.draft;
     if (!draft) return;
