@@ -76,6 +76,11 @@ export function parseCli(argv: readonly string[], cwd: string): Cli {
 export async function checkFolders(source: string, target: string): Promise<[true] | [false, string]> {
   const src = await Deno.stat(source).catch(() => null);
   if (!src?.isDirectory) return [false, `The source folder doesn't exist: ${source}`];
+  try {
+    for await (const _ of Deno.readDir(source)) break;
+  } catch (error) {
+    return [false, cantRead(source, error)];
+  }
   let existing = target;
   let info = await Deno.stat(existing).catch(() => null);
   while (!info) {
@@ -92,6 +97,17 @@ export async function checkFolders(source: string, target: string): Promise<[tru
     return [false, `The target must be on the same drive as the source, so files are moved, never copied: ${target}`];
   }
   return [true];
+}
+
+/**
+ * Spec C1.5. On macOS, EPERM (rather than EACCES) means the privacy settings are
+ * blocking the terminal app, typically from a network or removable volume.
+ */
+export function cantRead(source: string, error: unknown, os: typeof Deno.build.os = Deno.build.os): string {
+  const message = `Can't read the source folder, ${source}: ${(error as Error).message}`;
+  if (os !== 'darwin' || (error as { code?: string }).code !== 'EPERM') return message;
+  return `${message}\nmacOS is blocking your terminal app from it. Allow the app in System Settings → Privacy & ` +
+    `Security → Files & Folders (Network Volumes or Removable Volumes) or Full Disk Access, then restart the app.`;
 }
 
 /** A path's drive or share root, for Windows, where `dev` may be missing. */

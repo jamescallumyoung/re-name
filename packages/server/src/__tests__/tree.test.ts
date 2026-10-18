@@ -40,6 +40,16 @@ describe('scanSource and buildTree', () => {
     expect(typeof scan.get('b.mkv')?.mtime).toBe('number');
   });
 
+  it('leaves out folders it can’t read, rather than failing (S1.7)', async () => {
+    if (Deno.build.os === 'windows') return;
+    await write('b.mkv');
+    await write('#recycle/old.mkv');
+    await Deno.chmod(join(source, '#recycle'), 0o000);
+    const scan = await scanSource(source, join(source, 'processed'), rules);
+    await Deno.chmod(join(source, '#recycle'), 0o755);
+    expect([...scan.keys()]).toEqual(['b.mkv']);
+  });
+
   it('gives each file its status: skipped, queued or available (S1.3)', async () => {
     await write('Show/Show.S01E01.mkv');
     await write('Show/Show.S01E02E03.mkv');

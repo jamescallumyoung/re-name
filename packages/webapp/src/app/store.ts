@@ -633,10 +633,13 @@ export class Store extends EventTarget {
 
   private async startApply(): Promise<void> {
     this.applyError = null;
+    // Shown before the call: a small apply can finish, and its events arrive, before the call returns.
+    this.apply = { progress: null, result: null };
+    this.emit();
     try {
       await this.queueCommand(() => this.api.call('queue.apply', {}));
-      this.apply = { progress: null, result: null };
     } catch (error) {
+      this.apply = null;
       if (error instanceof RpcError && error.status === 422) {
         this.applyError = { message: error.message, details: error.details };
       } else this.report(error);

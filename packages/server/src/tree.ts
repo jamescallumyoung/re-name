@@ -20,7 +20,7 @@ export type Scan = Map<string, ScannedFile>;
 const isInside = (path: string, dir: string) => path === dir || path.startsWith(dir + SEPARATOR);
 
 /**
- * Spec S1.1, S1.2, S1.5. `source` and `target` must be absolute, and `source` a
+ * Spec S1.1, S1.2, S1.5, S1.7. `source` and `target` must be absolute, and `source` a
  * real path. Symbolic links are followed only to files inside the source:
  * following linked folders could loop.
  */
@@ -37,7 +37,10 @@ export async function scanSource(source: string, target: string, rules: TagRules
         if (!real || !isInside(real, source)) continue;
         isFile = (await Deno.stat(real)).isFile;
       } else if (entry.isDirectory) {
-        await walk(full);
+        // A folder that can't be read (a NAS's @eaDir or #recycle, say) is left out.
+        await walk(full).catch((error) => {
+          if (!(error instanceof Deno.errors.PermissionDenied)) throw error;
+        });
         continue;
       }
       if (!isFile || !isVideo(entry.name)) continue;

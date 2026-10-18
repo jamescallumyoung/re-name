@@ -16,6 +16,7 @@ Conventions:
 - **C1.2** `--help` prints the usage, and `--version` the version, then exit with status 0. An unknown flag, a second positional argument or a bad `--port` prints the problem and the usage, then exits with status 2.
 - **C1.3** The source must be an existing folder. The target may not exist yet. Its nearest existing parent must be on the same drive as the source: same `dev` from `Deno.stat`, or on Windows (where `dev` may be missing), the same volume root of the real paths. Otherwise, exit with status 1 and say why.
 - **C1.4** Start-up runs in this order: arguments (C1), config (F1), lock (L1), state, HTTP server (H1). Then the browser opens at the launch URL unless `--no-open`, and the URL is printed either way.
+- **C1.5** The source must be readable, or exit with status 1, naming the folder and the reason. On macOS, `EPERM` means the privacy settings block the terminal app from the folder (as for network and removable volumes), so the message also says where to allow it.
 
 ## F. Config folders and `.env` (§5)
 
@@ -51,6 +52,7 @@ Conventions:
 - **S1.4** Folders come before files, and each is sorted by name (`localeCompare`).
 - **S1.5** Each scan records every video file's size and modified time, which A1.1 compares against.
 - **S1.6** A path from the webapp is accepted only if it's relative, has no `.` or `..` segments, and is a video file in the last scan. Otherwise it's a `422` naming the path.
+- **S1.7** A folder inside the source that can't be read (permission denied) is left out of the tree, rather than failing the scan.
 
 ## P. Parsing names and tags (§9.3, §9.4)
 

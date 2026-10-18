@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { expect } from '@std/expect';
 import { join } from '@std/path';
-import { checkFolders, parseCli } from '../cli.ts';
+import { cantRead, checkFolders, parseCli } from '../cli.ts';
 import { folders, loadConfig } from '../config.ts';
 import { acquireLock } from '../lock.ts';
 
@@ -47,6 +47,18 @@ describe('checkFolders', () => {
       `The source folder doesn't exist: ${join(tmp, 'missing')}`,
     ]);
     expect(await checkFolders(tmp, join(tmp, 'processed', 'deeper'))).toEqual([true]);
+  });
+
+  it('needs a source it can read, and says how to allow it on macOS (C1.5)', async () => {
+    if (Deno.build.os !== 'windows') {
+      await Deno.chmod(tmp, 0o000);
+      const [ok, message] = await checkFolders(tmp, join(tmp, 'out'));
+      await Deno.chmod(tmp, 0o755);
+      expect([ok, message]).toEqual([false, expect.stringContaining(`Can't read the source folder, ${tmp}`)]);
+    }
+    const eperm = Object.assign(new Error('Operation not permitted (os error 1)'), { code: 'EPERM' });
+    expect(cantRead('/Volumes/v', eperm, 'darwin')).toContain('Privacy & Security');
+    expect(cantRead('/Volumes/v', eperm, 'linux')).not.toContain('Privacy');
   });
 
   it('refuses a target that is a file (C1.3)', async () => {
