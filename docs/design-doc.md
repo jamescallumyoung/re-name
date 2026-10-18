@@ -1,6 +1,6 @@
 # re-name: design document
 
-**Status:** design agreed on 2026-10-17. No code exists yet. Items marked **Open** are not decided. Everything else is.
+**Status:** design agreed on 2026-10-17, then refined by a clickable UI proof of concept (`packages/webapp` on branch `feature/webapp-ui-poc`, 2026-10-18). The POC runs against an in-page mock server; there's no real server yet. What the POC settled is folded in here. Items marked **Open** are not decided. Everything else is.
 
 re-name renames and reorganises movie and TV episode files so that Plex, Jellyfin and Emby can identify them. Files are matched to The Movie Database (TMDB). You run it from a terminal and use it in your browser: a local server does the file work, and a web page provides the interface.
 
@@ -60,6 +60,10 @@ A throwaway trial, outside the repo, confirmed:
 ## 3. Repository and packages
 
 - A Deno workspace with **at least a `server` package and a `webapp` package**, so the webapp's internals stay separate from the server's. Shared packages are added as needed, for example `protocol`, which holds the `Rpc` contract and shared types.
+  - **So far:** `packages/protocol` (the contract) and `packages/webapp` (the UI POC, with its mock server in `src/mock/` and its POC controls in `src/poc/`). The webapp's README describes what to try.
+  - The webapp keeps its pure logic in `src/lib/` (tested with `deno test`), its single store in `src/app/store.ts`, and its views in `src/components/`, as in Loadout.
+  - **esbuild doesn't know about Deno workspace members,** so the webapp's build maps `@re-name/protocol` to its source with esbuild's `alias` option. Lit and esbuild come from `node_modules` (`"nodeModulesDir": "auto"` in the root `deno.json`).
+  - `deno fmt` excludes `docs/`, which is formatted by hand.
 - re-name is an **application, not a library**. It isn't published to npm or JSR. (The npm name `re-name` is taken anyway.) Builds are published to the repo's **GitHub Releases**.
 - Code style follows Loadout where Deno allows: strict TypeScript, functions that can fail return `[true, value] | [false, reason]`, and docs-first work with numbered statements cited by tests.
 
@@ -137,66 +141,94 @@ Paths are worked out from the home folder and environment variables, with no dep
 
 ## 7. Workflow
 
+The webapp has **two views**: the **overview**, and the **draft Job**, a near-full-page modal over it.
+
 ```
 re-name [source] [--target]
    │
    ▼
-Options (shown first): flavour (default from .env), include episode names
+Settings modal (once per run, can't be dismissed): media server, episode names
    │
    ▼
-┌─ OVERVIEW ──────────────────────────────────────────────────────────────┐
-│  File explorer of the source: video files only                          │
-│   · multi-select, shift-click ranges, select all and deselect all       │
-│   · selecting a folder selects every video file in it, recursively      │
-│   · files in approved Jobs are greyed out and can't be selected         │
-│   · skipped files are greyed out differently, with the reason shown     │
-│  Queue: one entry per approved Job, each with a tree of its changes     │
-│  [New Job from selection]                       [Confirm: apply Queue]  │
-└─────────────────────────────────────────────────────────────────────────┘
-   │ selection
+┌─ OVERVIEW ───────────────────────────────────────────────────────────────┐
+│ App bar: re-name · Source: /full/path · [Plex | Episode names on ⚙] · ● │
+│                                                                          │
+│ ┌ Files ──────────────────────── 10 selected · Select all · Clear ─────┐ │
+│ │ ▸ ☐ Folder/                                              9 files    │ │
+│ │     ☑ File.S01E01….mkv                                    1.3 GB    │ │
+│ │     ☐ File.S01E02….mkv                     [≡ Severance]  3.0 GB    │ │
+│ │     ☐ sample.mkv                           [⊘ Sample]    13.3 GB    │ │
+│ └──────────────────────────────────────────────────────────────────────┘ │
+│ ┌ Queue ─────────────── 3 Jobs · 15 files · → /full/target/path ───────┐ │
+│ │ ▸ [poster] Severance (2022)    TV · 12 files              ✎  🗑     │ │
+│ └──────────────────────────────────────────────────────────────────────┘ │
+│ ┌──────────────────────────────────────────── Apply the Queue  ❯❯❯ ───┐ │
+│ └──────────────────────────────────────────────────────────────────────┘ │
+│                                                    [ + Create Job (10) ] │
+└──────────────────────────────────────────────────────────────────────────┘
+   │ Create Job (the FAB)
    ▼
-DRAFT JOB:  1. Match  →  2. Seasons and episodes (TV only)  →  3. Tags
-   │ add to Queue (the server checks it and returns the updated Queue)
+DRAFT JOB modal:  1. Match  →  2. Seasons (TV only)  →  3. Tags & names
+   │ Add to Queue (the server checks it and returns the updated Queue)
    ▼
-back to the overview  …  Confirm  →  check against disk  →  move and rename  →  log
+back to the overview  …  Apply the Queue  →  confirm  →  check against disk  →  move and rename  →  log
 ```
 
 ### 7.1 Overview
 
-- A file explorer of the source folder, showing **video files only**, recognised by extension (§10). Subtitles and every other file are left out.
-- **Selection:** multi-select. Shift-click selects a range. Select all and deselect all are offered. Selecting a folder selects every video file inside it, recursively.
-- **Files in approved Jobs** are greyed out and can't be selected.
-- **Skipped files** are greyed out with a visible reason, and must look different from queued files. Skipped files are:
+**App bar**
+- The name, then the **source folder's full path**.
+- The **settings widget** shows the media server and whether episode names are on. It reopens the settings modal (§9.7).
+- The **connection indicator** shows "Connected", or a blinking "Reconnecting…" when the server's heartbeats stop (§8.5).
+- A "Dry run" chip appears when re-name was started with `--dry-run`.
+
+**Files card**
+- A file explorer of the source folder, showing **video files only**, recognised by extension (§10). Subtitles and every other file are left out. Rows show each file's size.
+- **Selection:** multi-select. Shift-click selects a range. Select all and Clear are offered. Selecting a folder selects every video file inside it, recursively. The card's header shows how many files are selected and their total size.
+- **Files in approved Jobs** are dimmed, can't be selected, and carry a chip with their Job's title.
+- **Skipped files** are dimmed with an outlined chip giving the reason, so they look different from queued files. Skipped files are:
   - **samples** (a false positive needs the user to rename or move it by hand)
   - **files with several episodes** (`S01E01-E02`, `S01E01E02`)
   - **split parts** (`cd1`, `pt1`, `part1`, `disc1` and so on)
 - The **target folder is hidden**.
-- **The Queue** is shown with each approved Job's changes, for example as a tree of folders and new names per Job. Each approved Job can be **edited** or **removed**.
-- **Confirm** applies the whole Queue (§8.4).
+
+**Queue card**
+- One row per approved Job: its poster, title and year, type, file count, and chips for duplicates and warnings.
+- A row opens to show the Job's **tree of changes**: target folders, then each new name with its old path underneath. `DUP-{n}` tags are highlighted.
+- Each approved Job can be **edited** or **removed**. Removing one asks first.
+
+**Apply banner.** A large button below the Queue card, shown while the Queue has Jobs. "Apply the Queue", the Job and file counts and the target path are aligned right, followed by an arrow. It opens the confirm dialog, which lists the settings the apply will use (media server, episode names, the target path, and dry run), then applies the whole Queue (§11).
+
+**Create Job FAB.** An extended floating action button at the bottom right. It reads "Create Job" with the selection's file count, and is disabled until something is selected. While a draft is minimised it reads "Resume draft: <title>" instead.
 
 ### 7.2 Draft Job
 
-The selected files become the draft Job. There's only one draft. Trying to start or edit a Job while a draft exists asks whether to **discard** the current draft. **Reloading the page loses the draft.** The page warns before it unloads while a draft has unsaved work. No browser storage is used.
+The selected files become the draft Job, shown in a **near-full-page modal**. There's only one draft. Trying to start or edit a Job while a draft exists asks whether to **discard** the current draft. **Reloading the page loses the draft.** The page warns before it unloads while a draft has unsaved work. No browser storage is used.
+
+- The modal's header shows the matched title and its poster, the file count, **Discard**, and **Minimise**.
+- **Minimise** (or Escape) hides the modal and **keeps the draft**. The FAB then resumes it.
+- Step tabs show the steps, with completed ones ticked. Back, Next and **Add to Queue** (or **Save Job** when editing) are in the modal's footer, beside a hint about what's missing.
 
 **1. Match.** Matching happens **once per Job**.
-- The server suggests **5 TMDB matches** from the most common title and year parsed from the Job's files, searching movies and TV.
-- Each match shows its **title, year, TMDB ID, type (movie or TV) and cover art**. Clicking one selects it.
-- A **manual search** box covers cases where every suggestion is wrong.
+- The server suggests **5 TMDB matches** from the most common title and year parsed from the Job's files, searching movies and TV. They're shown as a list to pick from.
+- Each match shows its **title, year, TMDB ID, type (movie or TV) and cover art**.
+- A **manual search** box, with a movie or TV filter, covers cases where every suggestion is wrong.
 
-**2. Seasons and episodes (TV only).**
-- Each file has its own **season dropdown**, pre-set to the most likely season, which is usually read from `SxxEyy`. Files in the same subfolder are grouped visually.
-- TMDB's episode names are shown, and numbers TMDB doesn't know are flagged.
+**2. Seasons (TV only).**
+- Files are grouped by folder. Each group has a "Season for all" dropdown.
+- Each file has its own **season dropdown**, pre-set to the most likely season: the one in its name if TMDB has it, else one in its folder's name, else TMDB's only season. It also has an episode number. Each row leads with its `SxxEyy` code.
+- TMDB's episode names are shown. Numbers TMDB doesn't know are flagged, and placeholder names say "No name on TMDB yet".
 - **Specials** (season 0) are supported.
 
-**3. Tags.**
-- The tags found in each file name are shown with their **transformed value** (§9.4). The user can **override** any value, or drop it.
-- Tags are **stored per file**, because files from one folder can come from different releases. But editing must be fast: clicking "continue" for every file isn't acceptable.
-- The starting design is **one grid per Job**: a row per file and a column per tag. A column header sets the value for every file in that column, and a cell overrides it for one file. **Open:** this will need a few design iterations.
-- New names are shown as a **preview**, worked out by the server (§8.2).
+**3. Tags & names.** Tags are **stored per file**, because files from one folder can come from different releases. But they're **edited per tag**, so files that share tags need no clicks:
+- **A list of the tags found in the Job**, one row each: the spellings found (for example `web-dl · WEB-DL`), how many files have it, and an input for what it becomes. The input changes the value for **every** file with that tag. ✕ drops the tag, ↺ goes back to the known-tags value, and **Files** opens a row per file to change just one. An empty value drops the tag.
+  - Spellings that the known-tags file gives the same value **share one row** (`265` and `x265`, `web-dl` and `WEB-DL`). Unknown tags get a row of their own, marked as unknown.
+- **Release groups** get a row too, editable for every file or per file. They apply **as you type**: the field keeps its raw text while it has focus, so the ", " between groups isn't lost.
+- **New names** are listed below the tags, grouped by folder, with each old name underneath. They're worked out **by the server** (§8.3) and refreshed about 200 ms after the last change, with any errors and warnings shown in place.
 
-**Adding to the Queue.** The webapp asks the server to add the draft. The server checks it and answers with the updated Queue, or with an error. The user then returns to the overview and can prepare the next Job. The user doesn't have to process every file in the source.
+**Adding to the Queue.** The webapp asks the server to add the draft. The server checks it and answers with the updated Queue, or with an error. The modal closes and the user returns to the overview to prepare the next Job. The user doesn't have to process every file in the source.
 
-**Editing an approved Job.** The Job is loaded into the webapp as the draft, with its files and choices filled in, so only small changes are needed. **It stays in the Queue** until the edited draft replaces it. Cancelling the edit changes nothing.
+**Editing an approved Job.** The Job is loaded into the modal as the draft, with its files and choices filled in, so only small changes are needed. **It stays in the Queue** until the edited draft replaces it, and its Queue row is marked "Editing". Cancelling the edit changes nothing.
 
 ### 7.3 What the webapp sends
 
@@ -219,12 +251,29 @@ A sparse description of the draft. Anything the server can get from TMDB by ID (
 
 …along with the Job's `type` (`movie` or `tv`) and `tmdbId`. `path` is relative to the source, since names can repeat across folders. `value: null` drops a tag.
 
+### 7.4 Visual design
+
+Settled through the POC:
+- **A dark theme, loosely Material 3:** tonal surfaces, filled and text buttons, an extended FAB, and dialogs with the actions on the right. Corners are tighter than Material's: 6–8px, and 12px on the FAB. Type is 14px Inter, with JetBrains Mono for paths and names.
+- **The palette is built from one seed colour, yellow `#f2c14e`.**
+  - It's the primary: the FAB, checkboxes and radio buttons, selected rows, focus rings, the current step, progress, and the Apply banner.
+  - **Every header is filled yellow with dark text:** the Files card, the Queue card, the draft modal, the settings modal and every dialog. A button on a header is dark with yellow text.
+  - The secondary role is sand, `#4d4430`, for neutral chips and the settings widget. The tertiary role is sage, `#aed0b2`, for "connected" and success.
+  - Surfaces and text are near-neutral tints of the same hue (42°).
+  - Warnings are orange, so they don't blur into the yellow. Errors are red, always with an icon and words.
+- **The Apply banner** is solid yellow, with two idle animations:
+  - its arrow is a trail of three chevrons lighting up in turn
+  - a sharp band of light sweeps across about every 17 seconds
+
+  Both stop while the banner is disabled and under the system's reduced-motion setting. The label's contrast never drops below 9.7:1: the sweep is a light band, so it only raises it.
+- **The page itself never scrolls.** The app bar stays put, and only the overview's column scrolls.
+
 ## 8. Communication between server and webapp
 
 ### 8.1 Where state lives
 
 - **The server holds the domain state:** the options, the source file tree and the Queue.
-- **The webapp holds:** the single draft Job, in memory, and **view state**, such as the selection, expanded folders, filters and the current screen. View state belongs in the URL where that's useful.
+- **The webapp holds:** the single draft Job, in memory, and **view state**, such as the selection, expanded folders, which Queue rows are open, and whether the draft and settings modals are showing. View state belongs in the URL where that's useful.
 - The webapp sends requests, and the server answers with the changed content to confirm or display.
 
 ### 8.2 Transport
@@ -249,28 +298,32 @@ Names are **commands** (a verb, plus a noun where it helps). `search` is fine as
 
 | Command | Body | Answer | Notable statuses |
 |---|---|---|---|
-| `session.claim` | `{ tabId }`, plus the launch token the first time | session cookie, options, Queue + `ETag` | `403` bad token, `409` another tab |
+| `session.claim` | `{ tabId }`, plus the launch token the first time | session cookie; the session (source and target names and full paths, `dryRun`, `optionsChosen`); options; Queue + `ETag` | `403` bad token, `409` another tab |
 | `session.end` | `{}` | `204` | |
-| `options.get` / `options.set` | `{ flavour, includeEpisodeName }` | options | `422` invalid |
+| `options.get` | `{}` | options | |
+| `options.set` | `{ flavour, includeEpisodeName }` + `If-Match` | options, Queue + `ETag` | `412` stale, `422` invalid |
 | `tree.get` | `{}` | the source's video files, each `available`, `queued (jobId)` or `skipped (reason)` | |
 | `tmdb.getSuggestions` | `{ files }` | 5 suggested matches | `502` TMDB unreachable |
 | `tmdb.search` | `{ query, type? }` | matches | `502` |
 | `tmdb.getDetails` | `{ type, tmdbId }` | details; for TV, seasons and episodes | `404` unknown ID |
-| `job.analyseFiles` | `{ files }` | per file: parsed fields, tags found and their transformed values, season and episode guesses | `422` a file is skipped or already queued |
-| `job.getPreview` | `{ draft }` | per file: the new path, any `DUP-{n}`, warnings and errors | `422` invalid draft |
+| `job.analyseFiles` | `{ files, forJobId? }` | per file: parsed fields, tags found and their transformed values, season and episode guesses | `422` a file is skipped or already queued |
+| `job.getPreview` | `{ draft, replacesJobId? }` | per file: the new path, any `DUP-{n}`, warnings and errors | `422` invalid draft |
 | `queue.get` | `{}` | Queue + `ETag` | |
 | `queue.addJob` | `{ draft }` + `If-Match` | Queue + `ETag` | `409` files already queued, `412` stale, `422` invalid |
 | `queue.replaceJob` | `{ jobId, draft }` + `If-Match` | Queue + `ETag` | `404`, `412`, `422` |
 | `queue.removeJob` | `{ jobId }` + `If-Match` | Queue + `ETag` | `404`, `412` |
 | `queue.apply` | `{}` + `If-Match` | `202` started; progress arrives over SSE | `409` already applying, `412` stale, `422` the check against the disk failed |
 
+- **`session.claim` tells the webapp about the run.** It sends the source and target as names and full paths, since the browser can't know the paths, plus `dryRun`, and `optionsChosen`, which is false until the options have been chosen in this run. The server keeps that flag, so a reload doesn't ask again (§9.7).
+- **`options.set` changes the Queue,** because every queued file's new name depends on the options. So it sends `If-Match` and answers with the recomputed Queue.
+- **`forJobId` and `replacesJobId`** are for editing an approved Job. `forJobId` lets `job.analyseFiles` accept that Job's own files, which are otherwise "already queued". `replacesJobId` makes `job.getPreview` number `DUP-{n}` as if the draft took that Job's place in the Queue.
 - **`job.getPreview` sends the whole draft, and the server stores nothing.** New names are worked out **only on the server**, so there's one implementation of the naming rules. The preview also shows `DUP-{n}` clashes against the Queue and the target before the Job is added.
 - **SSE events** are facts, not commands: `heartbeat`, `apply-progress`, `apply-done` (with the log path and the new Queue + `ETag`), `shutting-down`, `taken-over`.
 
 ### 8.4 Stale and duplicate requests
 
 - **Every command checks its own preconditions.** A draft can't be added twice (`409`). A removed Job can't be removed again (`404`). The Queue can't be applied while it's being applied (`409`). The webapp also disables a button while its request is running.
-- **The Queue carries an `ETag`.** Every response that includes the Queue sends `ETag`. Every command that changes the Queue must send `If-Match`. A stale value gets `412 Precondition Failed`, after which the webapp fetches the Queue again. A missing `If-Match` gets `428 Precondition Required`.
+- **The Queue carries an `ETag`.** Every response that includes the Queue sends `ETag`. Every command that changes the Queue must send `If-Match`: `options.set`, `queue.addJob`, `queue.replaceJob`, `queue.removeJob` and `queue.apply`. A stale value gets `412 Precondition Failed`, after which the webapp fetches the Queue again. A missing `If-Match` gets `428 Precondition Required`.
 
 ### 8.5 Session and lifecycle
 
@@ -280,7 +333,8 @@ Names are **commands** (a verb, plus a noun where it helps). `search` is fine as
 4. **Closing the tab ends re-name.**
    - When the event stream closes, a **grace period** starts. If the same tab claims the session again in time (a reload), it continues. Otherwise the server releases the lock and exits.
    - The grace period counts **missed heartbeats**, not a single timer, so a computer waking from sleep doesn't end the session by mistake.
-   - **Open:** the grace period and heartbeat interval (about 5 seconds was proposed).
+   - **Open:** the grace period and heartbeat interval. The POC sends a heartbeat every 5 seconds.
+   - **The webapp shows the connection.** If no heartbeat arrives for 12 seconds (about two missed beats), or the event stream closes, the app bar shows "Reconnecting…". The next heartbeat sets it back to "Connected", with a snackbar.
 5. **Ctrl-C ends re-name.** The server sends `shutting-down`, so the page shows that re-name has stopped, then exits.
 6. **During an apply,** the server never exits in the middle of a rename. It reaches a safe point, writes the log, then exits.
 
@@ -345,16 +399,17 @@ Without an episode name, the brackets follow the episode code in the same way: `
   - neither: no brackets, and no separator before them
 
   This format isn't configurable.
-- **Groups** come last, **each with its own `-`**, in their original order: `[1080p x265 -NTb -rartv]`. In source names, groups appear either separately or in the form `…-NTb[rartv]`.
+- **Groups** come last, **each with its own `-`**, in their original order: `[1080p x265 -NTb -rartv]`. In source names, groups appear either separately (`…-GGEZ-RARBG`) or in the form `…-NTb[rartv]`. A trailing part that completes a known tag isn't a group: in `…WEB-DL-NTb`, `-DL` belongs to `WEB-DL`, and only `NTb` is a group.
 - **`DUP-{n}`** is the **last tag, before the groups**: `[1080p WEB-DL x265 DUP-1 -ELiTE]`.
-- **The order of tags is decided by the server.** **Open:** the order, for example resolution, source, HDR, audio, codec, then the rest.
+- **The order of tags is decided by the server.** The POC orders them by category: resolution, source, streaming service, HDR, audio, codec, then everything else (such as `REPACK` and unknown tags), keeping the original order within a category. **Open:** confirm this order.
 
 ### 9.4 Finding and transforming tags
 
 - Tags are found with **regexes**, from a **known-tags config file** in the config folder. Each known tag has a pattern and a transformation (for example `265` → `x265`, `web-dl` → `WEB-DL`, `appleVT` → dropped).
 - Dots separate tags, but **some tags contain dots** (`DDP5.1`, `H.264`, `DDP5.1.Atmos`). So known patterns are tried **longest first** against the name, and whatever's left is split on `.`.
 - **Unknown tags are kept**, as they are, by default.
-- The user can override any value per Job column or per file (§7.2).
+- Spellings that the known-tags file gives **the same value are the same tag** when editing (`265` and `x265`), so they share one row on the Tags step. Tags it drops, and unknown tags, are each their own.
+- The user can change any tag's value for every file in the Job, or for one file (§7.2).
 - **Open:** the format of the known-tags file, and the built-in defaults.
 
 ### 9.5 Duplicates
@@ -371,7 +426,9 @@ All three servers treat names that differ only inside the brackets as **versions
 
 ### 9.7 Options per Queue
 
-Chosen up front, they apply to every Job. Changing one recomputes every approved Job's preview.
+They apply to every Job. They're **asked for once per run, up front**, in a settings modal that can't be dismissed. The server records that they've been chosen (`optionsChosen`, §8.3), so a reload doesn't ask again. The app bar's settings widget reopens the modal, which can then be cancelled. The confirm dialog for applying the Queue lists them again.
+
+**Changing an option renames the files of every approved Job,** so `options.set` changes the Queue and returns it (§8.3).
 
 | Option | Default |
 |---|---|
@@ -387,6 +444,8 @@ Chosen up front, they apply to every Job. Changing one recomputes every approved
 - **Files that aren't touched are left where they are.** This includes the rest of a release folder (`.nfo`, `.txt`, images, samples) and the folders emptied by moves.
 
 ## 11. Applying the Queue
+
+Applying starts from the Apply banner (§7.1). A confirm dialog lists the files and Jobs, the media server, the episode-name option, the target path, and whether it's a dry run.
 
 1. **Check against the disk.** Every selected file must still exist, unchanged since it was read. No file may have appeared at a target name. Any change is an **error, and nothing is applied**. `DUP-{n}` is never renumbered silently.
 2. **Move only.** Files are renamed into new folders in the target. **The target must be on the same drive as the source**, so a rename is instant. A target on another drive is refused, and re-name never copies.
@@ -409,10 +468,10 @@ The user moves the result from the target into the media server's library by han
 
 ## 13. Open items
 
-1. The tag grid's design (§7.2), which will need iterations.
-2. The known-tags file format and its defaults, and the server's tag order (§9.3, §9.4).
+1. ~~The tag grid's design~~: settled by the POC as a list of tags with per-file changes (§7.2).
+2. The known-tags file format and its defaults (§9.4). Confirm the POC's tag order (§9.3).
 3. Final environment variable names, the TMDB credential type, and the title-language default (§5.3).
-4. The grace period and heartbeat interval (§8.5).
+4. The grace period and heartbeat interval (§8.5). The POC uses 5 s heartbeats and shows "Reconnecting…" after 12 s.
 5. Overlapping runs: refuse or warn (§5.2).
 6. TMDB images: loaded by the browser from `image.tmdb.org`, or proxied and cached by the server. This decides the page's content security policy.
 7. TMDB rate limiting and how long the cache keeps entries.
