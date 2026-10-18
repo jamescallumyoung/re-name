@@ -1,0 +1,22 @@
+# Type-check, lint, format check and test, on each OS re-name ships for.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.x
+      - run: deno install
+      - run: deno task check
+      - run: deno task test

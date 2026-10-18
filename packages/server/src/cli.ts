@@ -50,7 +50,8 @@ export function parseCli(argv: readonly string[], cwd: string): Cli {
       },
     });
   } catch (error) {
-    return { exit: 2, message: `${(error as Error).message}\n\n${USAGE}` };
+    // Keep the first sentence: node:util's advice about `--` doesn't apply here.
+    return { exit: 2, message: `${(error as Error).message.replace(/\. To specify .*$/s, '.')}\n\n${USAGE}` };
   }
   const { values, positionals } = parsed;
   if (values.help) return { exit: 0, message: USAGE };

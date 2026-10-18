@@ -31,6 +31,9 @@ describe('parseCli', () => {
     expect(parseCli(['--help'], '/')).toMatchObject({ exit: 0 });
     expect(parseCli(['--version'], '/')).toEqual({ exit: 0, message: 're-name 0.1.0' });
     expect(parseCli(['--colour'], '/')).toMatchObject({ exit: 2 });
+    expect((parseCli(['--colour'], '/') as { message: string }).message).toMatch(
+      /^Unknown option '--colour'\.\n\nUsage/,
+    );
     expect(parseCli(['a', 'b'], '/')).toMatchObject({ exit: 2 });
     expect(parseCli(['--port', 'x'], '/')).toMatchObject({ exit: 2 });
     expect(parseCli(['--port', '70000'], '/')).toMatchObject({ exit: 2 });

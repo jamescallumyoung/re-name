@@ -2,6 +2,15 @@
   // re-name: a Deno workspace. See docs/design-doc.md.
   "workspace": ["packages/protocol", "packages/server", "packages/webapp"],
   "nodeModulesDir": "auto",
+  "tasks": {
+    // Each package by name: a recursive `deno task -r` also runs these root tasks, recursing.
+    "check": "deno task --cwd packages/server check && deno task --cwd packages/webapp check && deno check scripts && deno lint scripts && deno fmt --check",
+    "test": "deno task --cwd packages/server test && deno task --cwd packages/webapp test",
+    "build": "deno task --cwd packages/webapp build",
+    "dev": "deno task --cwd packages/webapp dev",
+    "start": "deno task --cwd packages/server start",
+    "compile": "deno run --allow-read --allow-write --allow-env --allow-run --allow-net scripts/compile.ts"
+  },
   "fmt": {
     "lineWidth": 120,
     "singleQuote": true,

@@ -1,0 +1,27 @@
+# On a version tag (v0.1.0, say): test, compile every target, gzip, and publish a GitHub
+# Release. Deno cross-compiles, so one Linux runner builds them all (design doc §12).
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.x
+      - run: deno install
+      - run: deno task check
+      - run: deno task test
+      - run: deno task compile
+      - run: gzip -9 dist/re-name-*
+      - run: gh release create "$GITHUB_REF_NAME" dist/re-name-*.gz --title "$GITHUB_REF_NAME" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
