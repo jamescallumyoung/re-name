@@ -1,6 +1,6 @@
 # re-name: design document
 
-**Status:** design agreed on 2026-10-17, then refined by a clickable UI proof of concept (`packages/webapp` on branch `feature/webapp-ui-poc`, 2026-10-18). The POC runs against an in-page mock server; there's no real server yet. What the POC settled is folded in here. Items marked **Open** are not decided. Everything else is.
+**Status:** implementation in progress (2026-10-18). The design was agreed on 2026-10-17, refined by a clickable UI proof of concept (POC v4.5, branch `feature/webapp-ui-poc`), and its last open items were decided for the implementation plan on 2026-10-18. The server's behaviour is specified, as numbered statements that the tests cite, in [`server-spec.md`](server-spec.md). Items marked **Open** are not decided. Everything else is.
 
 re-name renames and reorganises movie and TV episode files so that Plex, Jellyfin and Emby can identify them. Files are matched to The Movie Database (TMDB). You run it from a terminal and use it in your browser: a local server does the file work, and a web page provides the interface.
 
@@ -113,17 +113,18 @@ Paths are worked out from the home folder and environment variables, with no dep
   - **If the native config folder can't be created or written to, re-name exits early**, before starting the server, with a message that names the folder and the reason (for example, permission denied).
   - **If the TMDB credential is missing or empty** in both the environment and `.env` (as it will be in a newly created `.env`), **re-name exits early**, before starting the server. Its message says the credential is missing and names the `.env` file to edit, or the environment variable to set.
 - **The known-tags file** lives in the config folder (§9.4).
-- **The lock file** lives in the state folder. It records the source folders currently open, so two runs can't work on overlapping folders on this machine. **Open:** whether an overlap is refused or only warned about.
+- **The known-tags file** is created with the built-in defaults if it's missing, like `.env`, and never modified once it exists (§9.4).
+- **The lock file** lives in the state folder: one file per run, recording the source's real path, the process ID and a timestamp refreshed every 30 seconds. **A run whose source overlaps another run's is refused** (one real path is inside the other). A lock not refreshed for 2 minutes is stale and ignored, so a crashed run doesn't block the next.
 - **Apply logs and undo history** live in the state folder, never in the library.
-- **The TMDB cache** lives in the cache folder.
+- **The TMDB cache** lives in the cache folder: one JSON file per request, kept for 7 days. The cache key is the request without the credential.
 
 ### 5.3 Environment variables
 
-| Variable (**Open:** final names) | Meaning |
+| Variable | Meaning |
 |---|---|
-| `TMDB_API_KEY` | The TMDB credential. **Open:** a v3 API key or a v4 read access token. |
-| `RENAME_FLAVOUR` | The default flavour: `plex`, `jellyfin` or `emby`. |
-| `RENAME_TITLE_LANGUAGE` | `original`, or any language code TMDB supports (such as `en-US`, `en-GB`, `pt-BR`). Used for movie, show **and** episode names. A name missing in that language falls back to the original language. **Open:** the default. |
+| `TMDB_API_KEY` | The TMDB credential: either a v4 read access token (it starts `eyJ`; sent as a Bearer header) or a v3 API key (sent as the `api_key` parameter). |
+| `RENAME_FLAVOUR` | The default flavour: `plex` (the default), `jellyfin` or `emby`. |
+| `RENAME_TITLE_LANGUAGE` | `original`, or any language code TMDB supports (such as `en-US`, `en-GB`, `pt-BR`). Used for movie, show **and** episode names. A name missing in that language falls back to the original language. The default is `en-US`. |
 
 ## 6. Terms
 
@@ -191,6 +192,7 @@ back to the overview  …  Apply the Queue  →  confirm  →  check against dis
   - **files with several episodes** (`S01E01-E02`, `S01E01E02`)
   - **split parts** (`cd1`, `pt1`, `part1`, `disc1` and so on)
 - The **target folder is hidden**.
+- **Refreshing:** the tree is read again on request (a **Refresh** button in the card's header), after any change to the Queue, and after an apply. There's no file watching: the apply's check against the disk catches anything that changed (§11).
 
 **Queue card**
 - One row per approved Job: its poster, title and year, type, file count, and chips for duplicates and warnings.
@@ -267,6 +269,7 @@ Settled through the POC:
 
   Both stop while the banner is disabled and under the system's reduced-motion setting. The label's contrast never drops below 9.7:1: the sweep is a light band, so it only raises it.
 - **The page itself never scrolls.** The app bar stays put, and only the overview's column scrolls.
+- **Accessibility** (from the POC's audit): every modal and dialog traps focus while open, moves focus into itself when it opens, returns focus to what opened it when it closes, and closes on Escape when it can be dismissed. The file tree follows the WAI-ARIA tree view pattern: Up and Down move between rows, Right and Left expand and collapse folders, Space selects, Shift with Up or Down extends the selection, and Home and End jump to the first and last row.
 
 ## 8. Communication between server and webapp
 
@@ -333,7 +336,7 @@ Names are **commands** (a verb, plus a noun where it helps). `search` is fine as
 4. **Closing the tab ends re-name.**
    - When the event stream closes, a **grace period** starts. If the same tab claims the session again in time (a reload), it continues. Otherwise the server releases the lock and exits.
    - The grace period counts **missed heartbeats**, not a single timer, so a computer waking from sleep doesn't end the session by mistake.
-   - **Open:** the grace period and heartbeat interval. The POC sends a heartbeat every 5 seconds.
+   - The server sends a heartbeat every **5 seconds**. When the event stream has been closed for **15 seconds** with no reclaim, the server exits.
    - **The webapp shows the connection.** If no heartbeat arrives for 12 seconds (about two missed beats), or the event stream closes, the app bar shows "Reconnecting…". The next heartbeat sets it back to "Connected", with a snackbar.
 5. **Ctrl-C ends re-name.** The server sends `shutting-down`, so the page shows that re-name has stopped, then exits.
 6. **During an apply,** the server never exits in the middle of a rename. It reaches a safe point, writes the log, then exits.
@@ -343,6 +346,7 @@ Names are **commands** (a verb, plus a noun where it helps). `search` is fine as
 - The server binds to `127.0.0.1` only, on a random port unless `--port` is given.
 - The launch token in the opened URL is swapped for an `HttpOnly`, `SameSite=Strict` cookie. Every request checks the cookie and the `Host` header (`127.0.0.1:<port>`). Writes also check `Origin`. This stops other websites, through cross-site requests or DNS rebinding, from asking the server to rename files.
 - Every path is resolved and must stay inside the source or target. `..` and symbolic links that lead out are refused.
+- **Content security policy:** scripts, styles and connections only from the page itself (plus Google Fonts for the fonts), and images only from the page and `image.tmdb.org`. Posters load straight from TMDB's image server (`w185` size); they aren't proxied.
 
 ## 9. Naming rules
 
@@ -401,7 +405,7 @@ Without an episode name, the brackets follow the episode code in the same way: `
   This format isn't configurable.
 - **Groups** come last, **each with its own `-`**, in their original order: `[1080p x265 -NTb -rartv]`. In source names, groups appear either separately (`…-GGEZ-RARBG`) or in the form `…-NTb[rartv]`. A trailing part that completes a known tag isn't a group: in `…WEB-DL-NTb`, `-DL` belongs to `WEB-DL`, and only `NTb` is a group.
 - **`DUP-{n}`** is the **last tag, before the groups**: `[1080p WEB-DL x265 DUP-1 -ELiTE]`.
-- **The order of tags is decided by the server.** The POC orders them by category: resolution, source, streaming service, HDR, audio, codec, then everything else (such as `REPACK` and unknown tags), keeping the original order within a category. **Open:** confirm this order.
+- **The order of tags is decided by the server.** The POC orders them by category: resolution, source, streaming service, HDR, audio, codec, then everything else (such as `REPACK` and unknown tags), keeping the original order within a category. 
 
 ### 9.4 Finding and transforming tags
 
@@ -410,7 +414,8 @@ Without an episode name, the brackets follow the episode code in the same way: `
 - **Unknown tags are kept**, as they are, by default.
 - Spellings that the known-tags file gives **the same value are the same tag** when editing (`265` and `x265`), so they share one row on the Tags step. Tags it drops, and unknown tags, are each their own.
 - The user can change any tag's value for every file in the Job, or for one file (§7.2).
-- **Open:** the format of the known-tags file, and the built-in defaults.
+- **The known-tags file** is `known-tags.json` in the config folder: an ordered list of `{ "pattern", "value", "category" }`. `pattern` is a case-insensitive regex matched against whole dot-separated tokens, `value` is the output (`null` drops the tag), and `category` is one of `resolution`, `source`, `service`, `hdr`, `audio`, `codec`, `other`, which sets the tag's place in the order (§9.3). The built-in defaults are the POC's list.
+- **TMDB requests** are limited to 8 at a time. A `429` is retried after its `Retry-After`.
 
 ### 9.5 Duplicates
 
@@ -437,9 +442,9 @@ They apply to every Job. They're **asked for once per run, up front**, in a sett
 
 ## 10. Files
 
-- **Video files only,** recognised by **extension**. **Open:** the final list (proposed: `mkv mp4 m4v avi mov wmv ts m2ts webm mpg mpeg`).
+- **Video files only,** recognised by **extension**. The list is `mkv mp4 m4v avi mov wmv ts m2ts webm mpg mpeg`.
 - **Subtitles are out of scope** for now. A later feature would need subtitles linked to a video, and their language and flags kept (`.en.forced.srt`).
-- **Samples are hidden.** **Open:** the rule (for example `sample` as a word in the name).
+- **Samples are hidden.** A sample is a file with `sample` as a word in its name, or any file in a folder called `Sample`.
 - **Not supported:** files with several episodes and split parts. They're shown greyed out with the reason.
 - **Files that aren't touched are left where they are.** This includes the rest of a release folder (`.nfo`, `.txt`, images, samples) and the folders emptied by moves.
 
@@ -464,21 +469,16 @@ The user moves the result from the target into the media server's library by han
 
 - **`deno compile`** for each target: Linux x64 and arm64, macOS arm64 and x64, Windows x64. Built in CI, published to GitHub Releases, gzipped (about 30 MB each).
 - **macOS builds** only have an ad-hoc signature, so downloads hit Gatekeeper's "cannot be verified" warning until they're signed with a Developer ID and notarised. **Windows** shows a SmartScreen warning for unsigned binaries. **Open:** signing.
-- The binary must be on the `PATH` for `re-name` to work as a command. **Open:** install instructions or an install script.
+- The binary must be on the `PATH` for `re-name` to work as a command. The README gives manual install steps. **Open:** an install script, and signing.
 
 ## 13. Open items
 
-1. ~~The tag grid's design~~: settled by the POC as a list of tags with per-file changes (§7.2).
-2. The known-tags file format and its defaults (§9.4). Confirm the POC's tag order (§9.3).
-3. Final environment variable names, the TMDB credential type, and the title-language default (§5.3).
-4. The grace period and heartbeat interval (§8.5). The POC uses 5 s heartbeats and shows "Reconnecting…" after 12 s.
-5. Overlapping runs: refuse or warn (§5.2).
-6. TMDB images: loaded by the browser from `image.tmdb.org`, or proxied and cached by the server. This decides the page's content security policy.
-7. TMDB rate limiting and how long the cache keeps entries.
-8. The video extension list and the sample rule (§10).
-9. Signing, notarisation and installation (§12).
-10. Whether the file explorer refreshes on its own or only on request. The apply check catches changes either way (§11).
-11. A manual check before release: a sample target folder scanned by real Plex, Jellyfin and Emby servers, to confirm the formats in §9.
+Settled for the implementation (2026-10-18), and recorded in the sections named: the tag list design (§7.2), the known-tags file and tag order (§9.3, §9.4), the environment variables and credential (§5.3), the heartbeat and grace period (§8.5), overlapping runs (§5.2), TMDB images (§8.6), TMDB rate limits and caching (§5.2, §9.4), the video extensions and the sample rule (§10), and refreshing the explorer (§7.1).
+
+Still open:
+
+1. Signing, notarisation and an install script (§12).
+2. A manual check before release: a sample target folder scanned by real Plex, Jellyfin and Emby servers, to confirm the formats in §9 (listed in `docs/manual-checks.md`).
 
 ## 14. Later features
 
