@@ -9,6 +9,7 @@ import { StoreController } from './store-controller.ts';
 import { base, buttons, headColours } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 import { FLAVOUR_LABEL } from '../components/app-header.ts';
+import { deepActiveElement, focusInto } from '../components/modal-focus.ts';
 import '../components/app-header.ts';
 import '../components/apply-banner.ts';
 import '../components/draft-modal.ts';
@@ -17,9 +18,16 @@ import '../components/job-fab.ts';
 import '../components/queue-section.ts';
 import '../components/settings-modal.ts';
 
+type Layer = 'draft' | 'settings' | 'dialog';
+
 @customElement('re-name-app')
 export class ReNameApp extends LitElement {
   private readonly c = new StoreController(this);
+  /** The open layers, bottom first, each with what had focus when it opened (design doc §7.4). */
+  private openers = new Map<Layer, HTMLElement | null>();
+  private closed: (HTMLElement | null)[] = [];
+  private opened: Layer[] = [];
+  private dialog: Element | null = null;
 
   static override styles = [
     base,
@@ -76,6 +84,9 @@ export class ReNameApp extends LitElement {
         place-items: center;
         padding: 20px;
         background: rgba(0, 0, 0, 0.6);
+      }
+      .dialog:focus {
+        outline: none;
       }
       .dialog {
         width: min(520px, 100%);
@@ -217,6 +228,48 @@ export class ReNameApp extends LitElement {
     `,
   ];
 
+  /** Which modal layers are open, bottom first. */
+  private layers(): Layer[] {
+    const s = this.c.store;
+    if (s.phase !== 'ready') return [];
+    return [
+      ...(s.draft && s.draftOpen ? ['draft' as const] : []),
+      ...(s.setupOpen || s.settingsOpen ? ['settings' as const] : []),
+      ...(s.pending || s.apply || s.applyError ? ['dialog' as const] : []),
+    ];
+  }
+
+  // Runs before the render that sets `inert`, so focus is still where the user left it.
+  protected override willUpdate(): void {
+    const open = this.layers();
+    // Bottom first, so if several layers close at once, the lowest one's opener wins.
+    for (const [layer, opener] of this.openers) {
+      if (!open.includes(layer)) {
+        this.closed.push(opener);
+        this.openers.delete(layer);
+      }
+    }
+    this.opened = open.filter((layer) => !this.openers.has(layer));
+    for (const layer of this.opened) this.openers.set(layer, deepActiveElement());
+  }
+
+  protected override updated(): void {
+    const top = [...this.openers.keys()].at(-1);
+    const dialog = this.renderRoot.querySelector('.dialog');
+    const newDialog = dialog !== this.dialog;
+    this.dialog = dialog;
+    const back = this.closed.find((el) => el?.isConnected);
+    this.closed = [];
+    if (top === 'dialog') {
+      if (newDialog && dialog?.parentElement) focusInto(dialog.parentElement);
+    } else if (top && this.opened.includes(top)) {
+      const modal = this.renderRoot.querySelector<LitElement>(`${top}-modal`);
+      void modal?.updateComplete.then(() => focusInto(modal.renderRoot));
+    } else if (back) {
+      back.focus();
+    }
+  }
+
   override render() {
     const store = this.c.store;
     const { phase, reason } = store;
@@ -239,21 +292,26 @@ export class ReNameApp extends LitElement {
         </div>
       `;
     }
+    const layers = this.layers();
+    const behind = layers.length > 0;
+    const dialog = layers.includes('dialog');
     return html`
-      <app-header></app-header>
-      <main>
+      <app-header ?inert=${behind}></app-header>
+      <main ?inert=${behind}>
         <div class="column">
           <files-section></files-section>
           <queue-section></queue-section>
           ${store.queue.jobs.length ? html`<apply-banner></apply-banner>` : nothing}
         </div>
       </main>
-      <job-fab></job-fab>
-      ${store.draft && store.draftOpen ? html`<draft-modal></draft-modal>` : nothing}
+      <job-fab ?inert=${behind}></job-fab>
+      ${store.draft && store.draftOpen
+        ? html`<draft-modal ?inert=${dialog || layers.includes('settings')}></draft-modal>`
+        : nothing}
       ${store.setupOpen
-        ? html`<settings-modal required></settings-modal>`
+        ? html`<settings-modal required ?inert=${dialog}></settings-modal>`
         : store.settingsOpen
-        ? html`<settings-modal></settings-modal>`
+        ? html`<settings-modal ?inert=${dialog}></settings-modal>`
         : nothing}
       ${this.renderPending()} ${this.renderApply()} ${this.renderSnackbars()}
     `;
@@ -305,15 +363,19 @@ export class ReNameApp extends LitElement {
         true,
       ];
     return html`
-      <div class="overlay" @click=${(e: Event) => e.target === e.currentTarget && store.answer(false)}>
-        <div class="dialog" role="alertdialog" aria-modal="true" aria-label=${title}>
+      <div
+        class="overlay"
+        @click=${(e: Event) => e.target === e.currentTarget && store.answer(false)}
+        @keydown=${(e: KeyboardEvent) => e.key === 'Escape' && store.answer(false)}
+      >
+        <div class="dialog" role="alertdialog" aria-modal="true" aria-label=${title} tabindex="-1">
           <div class="head"><span class="icon">${icon(
             pending.kind === 'apply' ? 'play' : 'alert',
           )}</span><h2>${title}</h2></div>
           <div class="dbody">
           ${body}
           <div class="buttons">
-            <button class="btn text" @click=${() => store.answer(false)}>Cancel</button>
+            <button class="btn text" autofocus @click=${() => store.answer(false)}>Cancel</button>
             <button class="btn ${primary ? 'primary' : 'text danger'}" @click=${() =>
               store.answer(true)}>${yes}</button>
           </div>
@@ -327,8 +389,8 @@ export class ReNameApp extends LitElement {
     const store = this.c.store;
     if (store.applyError) {
       return html`
-        <div class="overlay">
-          <div class="dialog" role="alertdialog" aria-modal="true">
+        <div class="overlay" @keydown=${(e: KeyboardEvent) => e.key === 'Escape' && store.dismissApply()}>
+          <div class="dialog" role="alertdialog" aria-modal="true" aria-label="Nothing was moved" tabindex="-1">
             <div class="head"><span class="icon">${icon('alert')}</span><h2>Nothing was moved</h2></div>
             <div class="dbody">
             <div class="problem">${icon('alert')}<span>${store.applyError.message}</span></div>
@@ -336,7 +398,8 @@ export class ReNameApp extends LitElement {
               ? html`<ul>${store.applyError.details.map((d) => html`<li>${d}</li>`)}</ul>`
               : nothing}
             <p>Check those files, then edit or remove the Jobs they’re in.</p>
-            <div class="buttons"><button class="btn primary" @click=${() => store.dismissApply()}>OK</button></div>
+            <div class="buttons"><button class="btn primary" autofocus @click=${() =>
+              store.dismissApply()}>OK</button></div>
             </div>
           </div>
         </div>
@@ -350,7 +413,7 @@ export class ReNameApp extends LitElement {
       const pct = p ? Math.round((p.index / p.total) * 100) : 0;
       return html`
         <div class="overlay">
-          <div class="dialog" role="dialog" aria-modal="true" aria-label="Applying the Queue">
+          <div class="dialog" role="dialog" aria-modal="true" aria-label="Applying the Queue" tabindex="-1">
             <div class="head"><span class="icon">${icon('play')}</span><h2>${store.session?.dryRun
               ? 'Dry-running the Queue'
               : 'Applying the Queue'}</h2></div>
@@ -364,8 +427,8 @@ export class ReNameApp extends LitElement {
       `;
     }
     return html`
-      <div class="overlay">
-        <div class="dialog" role="alertdialog" aria-modal="true">
+      <div class="overlay" @keydown=${(e: KeyboardEvent) => e.key === 'Escape' && store.dismissApply()}>
+        <div class="dialog" role="alertdialog" aria-modal="true" aria-label="Apply finished" tabindex="-1">
           <div class="head"><span class="icon">${icon(result.error ? 'alert' : 'check')}</span><h2>${result.error
             ? 'The apply stopped on an error'
             : result.dryRun
@@ -392,7 +455,8 @@ export class ReNameApp extends LitElement {
             ? html`<p>Move the folders in <span class="mono">${store.session?.targetPath}</span> into your media
               server’s library when you’re ready.</p>`
             : nothing}
-          <div class="buttons"><button class="btn primary" @click=${() => store.dismissApply()}>Done</button></div>
+          <div class="buttons"><button class="btn primary" autofocus @click=${() =>
+            store.dismissApply()}>Done</button></div>
           </div>
         </div>
       </div>

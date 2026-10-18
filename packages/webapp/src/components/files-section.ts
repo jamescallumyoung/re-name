@@ -3,10 +3,10 @@
 // and queued and skipped files dimmed with a chip.
 
 import { css, html, LitElement, nothing } from 'lit';
-import { customElement } from 'lit/decorators.js';
+import { customElement, state } from 'lit/decorators.js';
 import type { FileNode, FolderNode, SkipReason, TreeNode } from '@re-name/protocol';
 import { StoreController } from '../app/store-controller.ts';
-import { filesUnder, folderCheck, folderPaths, formatBytes, isSelectable } from '../lib/tree.ts';
+import { filesUnder, folderCheck, folderPaths, formatBytes, isSelectable, treeKey, visibleRows } from '../lib/tree.ts';
 import { base, buttons, card, fields, tags } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 
@@ -19,6 +19,11 @@ const SKIP: Record<SkipReason, { label: string; why: string }> = {
 @customElement('files-section')
 export class FilesSection extends LitElement {
   private readonly c = new StoreController(this);
+  /** The row that takes focus: the tree has one tab stop, and the arrow keys move it (design doc §7.4). */
+  @state()
+  accessor focusPath: string | null = null;
+  /** Set by a key press, so the next render moves focus to `focusPath`. */
+  private moveFocus = false;
 
   static override styles = [
     base,
@@ -45,6 +50,10 @@ export class FilesSection extends LitElement {
       }
       .row:hover {
         background: rgba(237, 231, 218, 0.04);
+      }
+      .row:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: -2px;
       }
       .row.selected {
         background: var(--primary-soft);
@@ -127,12 +136,15 @@ export class FilesSection extends LitElement {
         <button class="btn sm text" @click=${() => store.setAllExpanded(!allOpen)}>
           ${allOpen ? 'Collapse all' : 'Expand all'}
         </button>
+        <button class="btn sm text" title="Read the source folder again" @click=${() => store.refreshTree()}>
+          Refresh
+        </button>
       </div>
       ${!tree
         ? html`<div class="empty">Reading the source…</div>`
         : files.length === 0
         ? html`<div class="empty">No video files are left in the source.</div>`
-        : html`<div class="rows" role="tree" aria-multiselectable="true">
+        : html`<div class="rows" role="tree" aria-label="Files in the source" aria-multiselectable="true" @keydown=${this.onKey}>
           ${tree.children.map((n) => this.renderNode(n, 0))}
         </div>`}
     `;
@@ -153,12 +165,17 @@ export class FilesSection extends LitElement {
         class="row folder ${open ? 'open' : ''}"
         style="--depth:${depth}"
         role="treeitem"
+        aria-level=${depth + 1}
         aria-expanded=${open}
+        data-path=${folder.path}
+        tabindex=${this.tabStop(folder.path)}
+        @focus=${() => (this.focusPath = folder.path)}
         @click=${() => this.c.store.toggleExpanded(folder.path)}
       >
         ${icon('chev', 'chev')}
         <input
           type="checkbox"
+          tabindex="-1"
           aria-label=${`Select everything in ${folder.name}`}
           .checked=${check === 'all' && selectable > 0}
           .indeterminate=${check === 'some'}
@@ -187,14 +204,19 @@ export class FilesSection extends LitElement {
         class="row file ${selected ? 'selected' : ''} ${selectable ? '' : 'off'}"
         style="--depth:${depth}"
         role="treeitem"
+        aria-level=${depth + 1}
         aria-selected=${selected}
         aria-disabled=${!selectable}
+        data-path=${file.path}
+        tabindex=${this.tabStop(file.path)}
+        @focus=${() => (this.focusPath = file.path)}
         title=${status.state === 'skipped' ? SKIP[status.reason].why : file.path}
         @click=${(e: MouseEvent) => selectable && this.c.store.toggleFile(file.path, e.shiftKey)}
       >
         <span class="gap"></span>
         <input
           type="checkbox"
+          tabindex="-1"
           aria-label=${`Select ${file.name}`}
           .checked=${selected}
           ?disabled=${!selectable}
@@ -213,4 +235,60 @@ export class FilesSection extends LitElement {
       </div>
     `;
   }
+
+  /** 0 for the one focusable row (the focused one, or the first), -1 for the rest. */
+  private tabStop(path: string): number {
+    const tree = this.c.store.tree;
+    const current = this.focusPath ?? (tree?.children[0]?.path ?? null);
+    return path === current ? 0 : -1;
+  }
+
+  /** The WAI-ARIA tree keys: arrows, Home, End, Space and Enter (design doc §7.4). */
+  private readonly onKey = (e: KeyboardEvent): void => {
+    const store = this.c.store;
+    const tree = store.tree;
+    const row = (e.target as HTMLElement).closest?.('[data-path]') as HTMLElement | null;
+    if (!tree || !row) return;
+    const action = treeKey(visibleRows(tree, store.expanded), row.dataset['path'] ?? '', e.key, e.shiftKey);
+    if (!action) return;
+    e.preventDefault();
+    switch (action.kind) {
+      case 'focus': {
+        this.focusPath = action.path;
+        this.moveFocus = true;
+        const file = filesUnder(tree).find((f) => f.path === action.path);
+        if (action.extend && file && isSelectable(file) && !store.selection.has(file.path)) {
+          store.toggleFile(file.path, true);
+        }
+        break;
+      }
+      case 'expand':
+      case 'collapse':
+        store.toggleExpanded(action.path);
+        break;
+      case 'toggle': {
+        const node = findNode(tree, action.path);
+        if (node?.kind === 'folder') store.toggleFolder(node);
+        else if (node && isSelectable(node)) store.toggleFile(node.path, false);
+        break;
+      }
+    }
+  };
+
+  protected override updated(): void {
+    if (!this.moveFocus || !this.focusPath) return;
+    this.moveFocus = false;
+    (this.renderRoot.querySelector(`[data-path="${CSS.escape(this.focusPath)}"]`) as HTMLElement | null)?.focus();
+  }
+}
+
+function findNode(node: TreeNode, path: string): TreeNode | undefined {
+  if (node.path === path) return node;
+  if (node.kind === 'folder') {
+    for (const child of node.children) {
+      const found = findNode(child, path);
+      if (found) return found;
+    }
+  }
+  return undefined;
 }

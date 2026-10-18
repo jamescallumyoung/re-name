@@ -33,6 +33,9 @@ export class DraftModal extends LitElement {
         padding: 24px;
         background: rgba(0, 0, 0, 0.55);
       }
+      .modal:focus {
+        outline: none;
+      }
       .modal {
         flex: 1;
         display: flex;
@@ -179,7 +182,7 @@ export class DraftModal extends LitElement {
     const ready = draft.match !== null && draft.details !== null;
     const m = draft.match;
     return html`
-      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="title" @keydown=${this.onKey}>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="title" tabindex="-1" @keydown=${this.onKey}>
         <header class="head">
           ${m
             ? html`<poster-art label=${m.title} year=${m.year} type=${m.type} tmdb-id=${m.tmdbId}></poster-art>`

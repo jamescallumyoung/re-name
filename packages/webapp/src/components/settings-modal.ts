@@ -34,6 +34,9 @@ export class SettingsModal extends LitElement {
         padding: 16px;
         background: rgba(0, 0, 0, 0.6);
       }
+      .modal:focus {
+        outline: none;
+      }
       .modal {
         width: min(600px, 100%);
         max-height: calc(100vh - 32px);
@@ -117,7 +120,7 @@ export class SettingsModal extends LitElement {
     const choice = this.choice ?? store.options;
     const jobs = store.queue.jobs.length;
     return html`
-      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="title" @keydown=${this.onKey}>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="title" tabindex="-1" @keydown=${this.onKey}>
         <div class="head">
           ${icon('settings')}
           <h1 id="title">${this.required ? 'Before you start' : 'Naming settings'}</h1>

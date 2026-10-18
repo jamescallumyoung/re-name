@@ -1,6 +1,7 @@
 // Builds the webapp into dist/: the bundled app.js, index.html and tokens.css.
-//   deno task build    build once
-//   deno task dev      rebuild on change, and serve on http://localhost:3000
+//   deno task build              build once
+//   deno task dev [source] ...   rebuild on change, and run the server on port 3000
+//                                (further arguments go to the server; reload the page after a change)
 // esbuild bundles it: `deno bundle` is still experimental (design doc, section 2).
 
 import * as esbuild from 'esbuild';
@@ -30,8 +31,15 @@ const context = await esbuild.context({
 
 if (dev) {
   await context.watch();
-  const { port } = await context.serve({ servedir: 'dist', port: 3000 });
-  console.log(`re-name webapp POC: http://localhost:${port}`);
+  // The real server reads dist/ on every request, so it serves each rebuild.
+  const args = Deno.args.filter((a) => a !== '--dev');
+  const server = new Deno.Command(Deno.execPath(), {
+    args: ['task', '--cwd', '../server', 'start', '--no-open', '--port', '3000', ...args],
+  }).spawn();
+  const { code } = await server.status;
+  await context.dispose();
+  await esbuild.stop();
+  Deno.exit(code);
 } else {
   await context.rebuild();
   await context.dispose();

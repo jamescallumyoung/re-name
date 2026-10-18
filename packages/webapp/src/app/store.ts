@@ -15,7 +15,7 @@ import type {
   ServerEvent,
   SessionInfo,
 } from '@re-name/protocol';
-import { type ApiClient, RpcError } from '../api/client.ts';
+import { type ApiClient, type EventStream, RpcError } from '../api/client.ts';
 import { type Draft, likelySeason, newDraft, type Step, stepsOf, tagKey, toDraftJob } from '../lib/draft.ts';
 import { filesUnder, folderPaths, isSelectable, rangeBetween } from '../lib/tree.ts';
 
@@ -67,6 +67,7 @@ export class Store extends EventTarget {
   busy = false;
   toasts: Toast[] = [];
   lastHeartbeat = Date.now();
+  private stream: EventStream | null = null;
   /** Whether the server's heartbeats are arriving (design doc, section 8.5). */
   connection: 'connected' | 'reconnecting' = 'connected';
 
@@ -96,6 +97,8 @@ export class Store extends EventTarget {
       this.session = claim.session;
       this.options = claim.options;
       this.queue = claim.queue;
+      // The launch token has done its job: the session cookie replaces it.
+      if (token) history.replaceState(history.state, '', location.pathname + location.hash);
     } catch (error) {
       this.phase = 'blocked';
       this.reason = error instanceof RpcError && error.status === 409
@@ -108,7 +111,7 @@ export class Store extends EventTarget {
       this.emit();
       return;
     }
-    this.api.listen((e) => this.onEvent(e), () => this.setConnection('reconnecting'));
+    this.stream = this.api.listen((e) => this.onEvent(e), () => this.setConnection('reconnecting'));
     // No heartbeat for a while means the connection is in trouble, even if the stream hasn't closed.
     setInterval(() => {
       if (Date.now() - this.lastHeartbeat > HEARTBEAT_TIMEOUT) this.setConnection('reconnecting');
@@ -147,15 +150,30 @@ export class Store extends EventTarget {
         void this.loadTree();
         break;
       case 'shutting-down':
-        this.phase = 'stopped';
-        this.reason = 're-name was stopped from the terminal. You can close this tab.';
+        this.stop('re-name was stopped from the terminal. You can close this tab.');
         break;
       case 'taken-over':
-        this.phase = 'stopped';
-        this.reason = 're-name was opened in another tab, which now has the session.';
+        this.stop('re-name was opened in another tab, which now has the session.');
         break;
     }
     this.emit();
+  }
+
+  /** The session is over: stop listening, so the stream doesn't reconnect and take it back. */
+  private stop(reason: string): void {
+    this.phase = 'stopped';
+    this.reason = reason;
+    this.stream?.close();
+    this.stream = null;
+  }
+
+  /** Reads the source again, on request (design doc §7.1). */
+  async refreshTree(): Promise<void> {
+    try {
+      await this.loadTree();
+    } catch (error) {
+      this.report(error);
+    }
   }
 
   private async loadTree(): Promise<void> {
