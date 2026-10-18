@@ -150,8 +150,7 @@ export class QueueSection extends LitElement {
   ];
 
   override render() {
-    const store = this.c.store;
-    const { queue, session, apply } = store;
+    const { queue, session } = this.c.store;
     const files = queue.jobs.reduce((n, j) => n + j.draft.files.length, 0);
     return html`
       <div class="head">
@@ -161,10 +160,6 @@ export class QueueSection extends LitElement {
           : 's'}</span>
         <span class="grow"></span>
         <span class="target" title="Files are moved here">→ ${session?.targetPath}</span>
-        <button class="btn primary" ?disabled=${queue.jobs.length === 0 || apply !== null} @click=${() =>
-          store.askApply()}>
-          ${icon('play')} ${session?.dryRun ? 'Dry-run Queue' : 'Apply Queue'}
-        </button>
       </div>
       ${queue.jobs.length === 0
         ? html`<div class="empty">

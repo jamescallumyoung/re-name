@@ -10,6 +10,7 @@ import { base, buttons, headColours } from '../styles/shared.ts';
 import { icon } from '../styles/icons.ts';
 import { FLAVOUR_LABEL } from '../components/app-header.ts';
 import '../components/app-header.ts';
+import '../components/apply-banner.ts';
 import '../components/draft-modal.ts';
 import '../components/files-section.ts';
 import '../components/job-fab.ts';
@@ -244,6 +245,7 @@ export class ReNameApp extends LitElement {
         <div class="column">
           <files-section></files-section>
           <queue-section></queue-section>
+          ${store.queue.jobs.length ? html`<apply-banner></apply-banner>` : nothing}
         </div>
       </main>
       <job-fab></job-fab>

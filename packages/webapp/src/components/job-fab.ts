@@ -1,5 +1,5 @@
-// The extended floating action button, bottom right: "Create Job" from the
-// selection, or "Resume draft" while a draft Job is minimised.
+// The floating action button, bottom right: "Create Job" from the selection, or
+// "Resume draft" while a draft Job is minimised.
 
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
@@ -19,6 +19,10 @@ export class JobFab extends LitElement {
         right: 28px;
         bottom: 28px;
         z-index: 40;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 14px;
       }
       button {
         display: flex;
@@ -69,8 +73,14 @@ export class JobFab extends LitElement {
 
   override render() {
     const store = this.c.store;
-    const { draft, draftOpen, selection, busy } = store;
+    const { draft, draftOpen } = store;
     if (draft && draftOpen) return nothing;
+    return this.renderJob();
+  }
+
+  private renderJob() {
+    const store = this.c.store;
+    const { draft, selection, busy } = store;
     if (draft) {
       return html`<button @click=${() => store.resumeDraft()}>
         ${icon('edit')} Resume draft${draft.match ? `: ${draft.match.title}` : ''}

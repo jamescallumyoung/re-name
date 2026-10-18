@@ -31,7 +31,8 @@ There are two views: the **overview** (Files, then the Queue) and the **draft Jo
    tree of changes. Try queuing _Blade Runner 2049_: a file with that name is already in `processed/`, so it gets a
    `DUP-1` tag.
 5. **Edit** or remove a Job, or change the options from the app bar, and watch the names change.
-6. **Apply Queue**: the confirm dialog lists the settings it will use, then shows progress and a result.
+6. **Apply the Queue** with the banner below it: the confirm dialog lists the settings it will use, then shows progress
+   and a result.
 
 **POC controls**, at the bottom left, drive the mock server: latency, a failing apply, files changed on disk,
 `--dry-run`, another tab holding the session, Ctrl-C, and a reset. The mock server's state survives a reload (as the

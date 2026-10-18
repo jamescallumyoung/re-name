@@ -16,6 +16,8 @@ import { renderNewName } from './new-name.ts';
 const toValue = (s: string): string | null => (s.trim() === '' ? null : s.trim());
 const splitGroups = (s: string) => s.split(/[,\s]+/).map((g) => g.replace(/^-/, '')).filter(Boolean);
 const GROUPS = 'groups';
+/** The key of the release-groups field for every file. */
+const ALL = '*';
 
 @customElement('tags-step')
 export class TagsStep extends LitElement {
@@ -23,6 +25,8 @@ export class TagsStep extends LitElement {
   /** Tags whose files are shown: view state only. */
   @state()
   accessor open = new Set<string>();
+  /** The raw text of release-group fields being typed in, by file path or ALL. */
+  private readonly typing = new Map<string, string>();
 
   static override styles = [
     base,
@@ -316,8 +320,9 @@ export class TagsStep extends LitElement {
             class="value"
             aria-label="Release groups for every file"
             placeholder=${common === null ? 'set for every file…' : 'none'}
-            .value=${common ?? ''}
-            @change=${(e: Event) => store.setAllGroups(splitGroups((e.target as HTMLInputElement).value))}
+            .value=${this.typing.get(ALL) ?? common ?? ''}
+            @input=${(e: Event) => this.typeGroups(ALL, (e.target as HTMLInputElement).value)}
+            @blur=${() => this.doneTyping(ALL)}
           />
           <span class="tools">
             <button class="per-file ${open ? 'open' : ''}" aria-expanded=${open} @click=${() => this.toggle(GROUPS)}>
@@ -336,8 +341,9 @@ export class TagsStep extends LitElement {
                     class="value"
                     aria-label=${`Release groups in ${f.path}`}
                     placeholder="none"
-                    .value=${(draft.groups[f.path] ?? []).join(', ')}
-                    @change=${(e: Event) => store.setGroups(f.path, splitGroups((e.target as HTMLInputElement).value))}
+                    .value=${this.typing.get(f.path) ?? (draft.groups[f.path] ?? []).join(', ')}
+                    @input=${(e: Event) => this.typeGroups(f.path, (e.target as HTMLInputElement).value)}
+                    @blur=${() => this.doneTyping(f.path)}
                   />
                   <span></span>
                 </div>
@@ -383,6 +389,22 @@ export class TagsStep extends LitElement {
     const name = f.path.slice(f.path.lastIndexOf('/') + 1);
     if (this.c.store.draft?.match?.type !== 'tv' || !e || e.season === null || e.episode === null) return name;
     return `S${String(e.season).padStart(2, '0')}E${String(e.episode).padStart(2, '0')}  ${name}`;
+  }
+
+  /**
+   * Release groups apply as you type; the names follow after the store's short
+   * pause. The field keeps the raw text while it has focus, because tidying it on
+   * every keystroke would swallow the ", " between groups.
+   */
+  private typeGroups(key: string, text: string): void {
+    this.typing.set(key, text);
+    if (key === ALL) this.c.store.setAllGroups(splitGroups(text));
+    else this.c.store.setGroups(key, splitGroups(text));
+  }
+
+  private doneTyping(key: string): void {
+    this.typing.delete(key);
+    this.requestUpdate();
   }
 
   private toggle(key: string): void {
