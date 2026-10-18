@@ -1,0 +1,69 @@
+/* re-name's design tokens: a Material 3-style dark scheme built from one seed colour,
+   yellow #f2c14e (hue 42°). Every role is a tone of it: the surfaces are near-neutral
+   tints of the same hue, the secondary role is a desaturated sand, and the tertiary
+   a sage that sits opposite it. Corners are tighter than Material's defaults.
+   Custom properties inherit through shadow roots, so every component reads these. */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces, lowest to highest: hue 42°, saturation 14%. */
+  --bg: #11100d;
+  --surface: #1a1814;
+  --surface-2: #23201a;
+  --surface-3: #2c2821;
+  --surface-4: #373329;
+  --line: #3a362c;
+  --line-strong: #504a3f;
+
+  /* Text: the same hue, lightly tinted. */
+  --fg: #ebe5d6;
+  --fg-2: #cdc6b5;
+  --muted: #9b9688;
+  --faint: #6d6a5e;
+
+  /* Primary: the seed. */
+  --primary: #f2c14e;
+  --primary-hover: #f6cd6e;
+  --on-primary: #2a1f00;
+  --primary-container: #4a3a10;
+  --on-primary-container: #ffe4a3;
+  --primary-soft: rgba(242, 193, 78, 0.12);
+  --primary-line: rgba(242, 193, 78, 0.5);
+
+  /* Secondary: the seed, desaturated to sand. Neutral chips and controls. */
+  --secondary: #d6c5a0;
+  --secondary-container: #4d4430;
+  --on-secondary-container: #f1e2bc;
+
+  /* Tertiary: sage, opposite the yellow. Success and "connected". */
+  --tertiary: #aed0b2;
+  --tertiary-container: #2f4d36;
+  --on-tertiary-container: #c9ecd0;
+
+  --ok: var(--tertiary);
+  /* Orange, so warnings don't blur into the yellow. */
+  --warn: #ff9f5a;
+  --warn-soft: rgba(255, 159, 90, 0.13);
+  --bad: #ff7a72;
+  --bad-soft: rgba(255, 122, 114, 0.13);
+
+  /* Headers: the Files card, the Queue card and every modal share one header, filled
+     with the seed. Text on it is dark; a button on it is dark with yellow text. */
+  --head-bg: var(--primary);
+  --head-fg: var(--on-primary);
+  --head-muted: #5c4710;
+  --head-accent: var(--on-primary);
+  --head-btn-bg: var(--on-primary);
+  --head-btn-fg: var(--primary);
+
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 8px;
+  --radius-fab: 12px;
+  --row: 40px;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35), 0 1px 3px 1px rgba(0, 0, 0, 0.2);
+  --shadow-3: 0 4px 8px 3px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.4);
+
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}

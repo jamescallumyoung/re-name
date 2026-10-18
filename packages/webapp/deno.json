@@ -1,0 +1,31 @@
+{
+  "name": "@re-name/webapp",
+  "version": "0.0.0",
+  "exports": "./src/main.ts",
+  "imports": {
+    "lit": "npm:lit@^3.3.1",
+    "lit/": "npm:/lit@^3.3.1/",
+    "esbuild": "npm:esbuild@^0.25.10",
+    "@std/testing": "jsr:@std/testing@^1.0.0",
+    "@std/expect": "jsr:@std/expect@^1.0.0"
+  },
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext",
+      "deno.ns"
+    ],
+    "strict": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "tasks": {
+    "build": "deno run --allow-read --allow-write --allow-env --allow-run --allow-net build.ts",
+    "dev": "deno run --allow-read --allow-write --allow-env --allow-run --allow-net build.ts --dev",
+    "check": "deno check src/main.ts build.ts && deno lint && deno fmt --check",
+    "test": "deno test src"
+  }
+}
