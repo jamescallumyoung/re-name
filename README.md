@@ -90,3 +90,11 @@ deno task compile            # every build into dist/ (or name the targets, such
 ```
 
 Pushing a `v*` tag builds the release. Before a release, go through [`docs/manual-checks.md`](docs/manual-checks.md).
+
+## AI Usage
+
+This project was directed by a human but much of the code was written by an AI without significant human oversight. It is vibe-coded and should be classified as ai-generated.
+
+## License
+
+This is free and unencumbered software released into the public domain. See [`UNLICENSE`](UNLICENSE), or <https://unlicense.org/> for more information.
